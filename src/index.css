@@ -1,0 +1,43 @@
+:root {
+  /* Tema azul principal */
+  --crm-blue-50: #eff6ff;
+  --crm-blue-100: #dbeafe;
+  --crm-blue-200: #bfdbfe;
+  --crm-blue-300: #93c5fd;
+  --crm-blue-400: #60a5fa;
+  --crm-blue-500: #3b82f6;
+  --crm-blue-600: #2563eb;
+  --crm-blue-700: #1d4ed8;
+  --crm-blue-800: #1e40af;
+  --crm-blue-900: #1e3a8a;
+  --crm-blue-950: #172554;
+
+  --crm-bg: #0f172a;
+  --crm-surface: #1e293b;
+  --crm-surface-hover: #334155;
+  --crm-text: #f1f5f9;
+  --crm-text-muted: #94a3b8;
+  --crm-border: #334155;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--crm-bg);
+  color: var(--crm-text);
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}

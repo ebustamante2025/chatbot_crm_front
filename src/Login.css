@@ -1,0 +1,126 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--crm-bg, #0f172a);
+  padding: 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--crm-surface, #1e293b);
+  border: 1px solid var(--crm-border, #334155);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.login-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--crm-text, #f1f5f9);
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.login-subtitle {
+  font-size: 0.9rem;
+  color: var(--crm-text-muted, #94a3b8);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-error {
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  border-radius: 0.5rem;
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+
+.login-success {
+  padding: 0.75rem;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid #22c55e;
+  border-radius: 0.5rem;
+  color: #86efac;
+  font-size: 0.875rem;
+}
+
+.login-link {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--crm-blue-400, #60a5fa);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.login-link:hover {
+  color: var(--crm-blue-300, #93c5fd);
+}
+
+.login-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--crm-text, #f1f5f9);
+}
+
+.login-input {
+  padding: 0.75rem 1rem;
+  background: var(--crm-bg, #0f172a);
+  border: 1px solid var(--crm-border, #334155);
+  border-radius: 0.5rem;
+  color: var(--crm-text, #f1f5f9);
+  font-size: 1rem;
+}
+
+.login-input::placeholder {
+  color: var(--crm-text-muted, #94a3b8);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--crm-blue-500, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.login-btn {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--crm-blue-600, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: var(--crm-blue-500, #3b82f6);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-hint {
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  color: var(--crm-text-muted, #94a3b8);
+  text-align: center;
+}
