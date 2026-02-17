@@ -18,10 +18,24 @@
   gap: 1.5rem;
 }
 
+.crm-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.crm-header-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
 .crm-header h1 {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--crm-text);
+  white-space: nowrap;
 }
 
 /* Pestañas de roles (Asesor, Administrador, Supervisor, Ventas) */
@@ -313,6 +327,80 @@
 .crm-chat-actions {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+}
+
+/* Menú desplegable de opciones */
+.crm-chat-menu-wrap {
+  position: relative;
+}
+
+.crm-chat-menu-btn {
+  background: var(--crm-surface-hover);
+  border: 1px solid var(--crm-border);
+  color: var(--crm-text);
+  font-size: 1.4rem;
+  font-weight: bold;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.crm-chat-menu-btn:hover {
+  background: var(--crm-border);
+}
+
+.crm-chat-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--crm-surface);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  min-width: 200px;
+  overflow: hidden;
+}
+
+.crm-chat-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: none;
+  border: none;
+  color: var(--crm-text);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.crm-chat-menu-item:hover {
+  background: var(--crm-surface-hover);
+}
+
+.crm-chat-menu-item--transfer {
+  color: #60a5fa;
+}
+
+.crm-chat-menu-item--transfer:hover {
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.crm-chat-menu-item--danger {
+  color: #f87171;
+}
+
+.crm-chat-menu-item--danger:hover {
+  background: rgba(248, 113, 113, 0.1);
 }
 
 /* Mensajes - tema azul para agente */
@@ -390,6 +478,27 @@
 .crm-mensaje-typing .crm-mensaje-contenido {
   font-style: italic;
   opacity: 0.9;
+}
+
+.crm-mensaje-typing .crm-mensaje-burbuja {
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.crm-mensaje-peek {
+  display: block;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+
+.crm-mensaje-peek-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+  margin-top: 4px;
 }
 
 .crm-mensaje-hora {
@@ -478,4 +587,161 @@
   align-items: center;
   justify-content: center;
   color: var(--crm-text-muted);
+}
+
+/* ========== Modal Cerrar Caso ========== */
+.crm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.crm-modal {
+  background: var(--crm-surface);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.crm-modal h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--crm-text);
+}
+
+.crm-modal-subtitulo {
+  margin: 0 0 1.25rem;
+  font-size: 0.82rem;
+  color: var(--crm-text-muted);
+}
+
+.crm-modal-campo {
+  margin-bottom: 1rem;
+}
+
+.crm-modal-campo label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--crm-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.crm-modal-campo select,
+.crm-modal-campo textarea,
+.crm-modal-campo input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: var(--crm-surface-hover);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.5rem;
+  color: var(--crm-text);
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.crm-modal-campo select:focus,
+.crm-modal-campo textarea:focus,
+.crm-modal-campo input:focus {
+  outline: none;
+  border-color: var(--crm-blue-500);
+}
+
+.crm-modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.crm-btn {
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.crm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crm-btn--secondary {
+  background: var(--crm-surface-hover);
+  color: var(--crm-text);
+  border: 1px solid var(--crm-border);
+}
+
+.crm-btn--secondary:hover:not(:disabled) {
+  background: var(--crm-border);
+}
+
+.crm-btn--danger {
+  background: #dc2626;
+  color: white;
+}
+
+.crm-btn--danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.crm-btn--transfer {
+  background: #2563eb;
+  color: white;
+}
+
+.crm-btn--transfer:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.crm-modal-error {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #f87171;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.4rem;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Alerta de sesión reemplazada */
+.crm-session-alert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  text-align: center;
+  padding: 0.85rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+  animation: crm-session-alert-in 0.4s ease;
+}
+
+@keyframes crm-session-alert-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

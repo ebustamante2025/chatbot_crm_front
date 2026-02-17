@@ -1,0 +1,373 @@
+/* ===== TABS INTERNAS (Temas / Preguntas) ===== */
+.crm-faq-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--crm-border);
+  background: var(--crm-surface);
+}
+
+.crm-faq-tab {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--crm-text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.crm-faq-tab:hover {
+  color: var(--crm-text);
+  background: var(--crm-surface-hover);
+}
+
+.crm-faq-tab--active {
+  color: var(--crm-blue-400);
+  border-bottom-color: var(--crm-blue-500);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* ===== ERROR GLOBAL ===== */
+.crm-faq-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  margin: 0.75rem 1.5rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.5rem;
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+
+.crm-faq-error button {
+  background: none;
+  border: none;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+}
+
+.crm-faq-error button:hover {
+  color: #ef4444;
+}
+
+/* ===== CONTENIDO PRINCIPAL ===== */
+.crm-faq-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.crm-faq-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.crm-faq-panel-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--crm-text);
+}
+
+.crm-faq-tema-nombre {
+  color: var(--crm-blue-400);
+}
+
+.crm-faq-loading,
+.crm-faq-empty {
+  color: var(--crm-text-muted);
+  font-size: 0.9rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+/* ===== SELECT TEMA (tab preguntas) ===== */
+.crm-faq-select-tema {
+  margin-bottom: 1.25rem;
+}
+
+.crm-faq-select-tema label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--crm-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.crm-faq-select-tema select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: var(--crm-surface);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.5rem;
+  color: var(--crm-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.crm-faq-select-tema select:focus {
+  outline: none;
+  border-color: var(--crm-blue-500);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* ===== LISTA DE ITEMS ===== */
+.crm-faq-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.crm-faq-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--crm-surface);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.5rem;
+  transition: border-color 0.2s;
+}
+
+.crm-faq-item:hover {
+  border-color: var(--crm-blue-500);
+}
+
+.crm-faq-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-faq-item-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.crm-faq-item-nombre {
+  font-weight: 600;
+  color: var(--crm-text);
+  font-size: 0.95rem;
+}
+
+.crm-faq-item-desc {
+  font-size: 0.8rem;
+  color: var(--crm-text-muted);
+  margin: 0.25rem 0 0 0;
+  line-height: 1.4;
+}
+
+.crm-faq-pregunta-texto {
+  font-weight: 600;
+  color: var(--crm-text);
+  font-size: 0.95rem;
+  margin: 0.25rem 0;
+}
+
+.crm-faq-respuesta-preview {
+  font-size: 0.8rem;
+  color: var(--crm-text-muted);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Badges */
+.crm-faq-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.crm-faq-badge--blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--crm-blue-400);
+}
+
+.crm-faq-badge--red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+/* Botones de acción (iconos) */
+.crm-faq-item-acciones {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.crm-faq-btn-icon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: var(--crm-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.crm-faq-btn-icon:hover {
+  background: var(--crm-surface-hover);
+  color: var(--crm-text);
+}
+
+.crm-faq-btn-icon--danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* ===== MODAL ===== */
+.crm-faq-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: crm-faq-fadeIn 0.15s ease-out;
+}
+
+@keyframes crm-faq-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.crm-faq-modal {
+  background: var(--crm-surface);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: crm-faq-scaleIn 0.15s ease-out;
+}
+
+.crm-faq-modal--wide {
+  max-width: 40rem;
+}
+
+@keyframes crm-faq-scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.crm-faq-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--crm-border);
+}
+
+.crm-faq-modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--crm-text);
+}
+
+.crm-faq-modal-close {
+  background: none;
+  border: none;
+  color: var(--crm-text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.crm-faq-modal-close:hover {
+  background: var(--crm-surface-hover);
+  color: var(--crm-text);
+}
+
+.crm-faq-modal-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.crm-faq-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--crm-border);
+  margin-top: 0.5rem;
+}
+
+/* ===== CAMPOS DE FORMULARIO ===== */
+.crm-faq-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.crm-faq-field label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--crm-text-muted);
+}
+
+.crm-faq-field input,
+.crm-faq-field textarea,
+.crm-faq-field select {
+  padding: 0.6rem 0.75rem;
+  background: var(--crm-bg);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.5rem;
+  color: var(--crm-text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.crm-faq-field input:focus,
+.crm-faq-field textarea:focus,
+.crm-faq-field select:focus {
+  outline: none;
+  border-color: var(--crm-blue-500);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.crm-faq-field input::placeholder,
+.crm-faq-field textarea::placeholder {
+  color: var(--crm-text-muted);
+  opacity: 0.6;
+}
+
+.crm-faq-field textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.crm-faq-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
