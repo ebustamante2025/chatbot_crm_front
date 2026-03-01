@@ -2,12 +2,18 @@ import { useEffect, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
 
 /**
- * URL del backend para WebSocket. En desarrollo, si el proxy falla con ws://,
- * define VITE_WS_URL=http://localhost:3004 (puerto del backend) en .env
+ * URL del backend para WebSocket. Debe ser la misma que usa la API para que
+ * widget y CRM estén en la misma sala y funcione la vista previa en vivo.
+ * Prioridad: VITE_WS_URL > base de VITE_API_URL > origin (solo si hay proxy).
  */
 const getSocketUrl = (): string => {
-  const env = import.meta.env.VITE_WS_URL
-  if (env && typeof env === 'string') return env.trim()
+  const ws = import.meta.env.VITE_WS_URL
+  if (ws && typeof ws === 'string') return ws.trim().replace(/\/$/, '')
+  const api = import.meta.env.VITE_API_URL
+  if (api && typeof api === 'string') {
+    const base = api.trim().replace(/\/api\/?$/, '')
+    if (base) return base
+  }
   return window.location.origin
 }
 

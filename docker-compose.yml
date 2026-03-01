@@ -1,0 +1,21 @@
+version: '3.8'
+
+# CRM Frontend (panel de agentes) - Requiere que api-backend esté corriendo
+# Se conecta a la red crm-chatbot-network (creada por chatbot_api_backend)
+
+services:
+  crm-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: crm-frontend:latest
+    container_name: crm-frontend
+    ports:
+      - "3007:80"
+    networks:
+      - crm-chatbot-network
+    restart: unless-stopped
+
+networks:
+  crm-chatbot-network:
+    external: true

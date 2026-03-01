@@ -150,12 +150,19 @@ function App() {
     socket.emit('register_agent', usuarioAgente.id_usuario)
   }, [socket, usuarioAgente?.id_usuario])
 
-  // WebSocket: unirse a sala de conversación al seleccionar una
+  // WebSocket: unirse a sala de conversación al seleccionar una (cliente y agente en la misma sala)
   useEffect(() => {
     if (!socket || !conversacionSeleccionada) return
+    setContactoEscribiendo(false) // Limpiar vista previa al cambiar de conversación
     const id = conversacionSeleccionada.id_conversacion
-    socket.emit('join_conversation', id)
+    const join = () => {
+      socket.emit('join_conversation', id)
+      socket.emit('agent_join_conversation', id) // asegura que el agente reciba new_message
+    }
+    join()
+    socket.on('connect', join) // re-unirse al reconectar
     return () => {
+      socket.off('connect', join)
       socket.emit('leave_conversation', id)
     }
   }, [socket, conversacionSeleccionada?.id_conversacion])
@@ -221,7 +228,7 @@ function App() {
       cargarConversaciones()
     }
     // Cuando hay actividad nueva en una conversación de este agente
-    const onNewActivity = (data: { id_conversacion: number }) => {
+    const onNewActivity = (_data: { id_conversacion: number }) => {
       cargarConversaciones()
     }
     // Actividad global en el CRM (cualquier mensaje nuevo en cualquier conversación)
@@ -264,7 +271,7 @@ function App() {
     }
   }, [socket])
 
-  // Emitir "está escribiendo" al widget cuando el agente escribe (debounce)
+  // Emitir "está escribiendo" + texto al widget para que el contacto vea qué está escribiendo el agente
   useEffect(() => {
     if (!socket || !conversacionSeleccionada || !nuevoMensaje.trim()) return
     const t = setTimeout(() => {
@@ -272,10 +279,11 @@ function App() {
         conversacionId: conversacionSeleccionada.id_conversacion,
         quien: 'agente',
         username: usuarioAgente?.username,
+        texto: nuevoMensaje.trim(),
       })
     }, 400)
     return () => clearTimeout(t)
-  }, [socket, conversacionSeleccionada?.id_conversacion, nuevoMensaje])
+  }, [socket, conversacionSeleccionada?.id_conversacion, nuevoMensaje, usuarioAgente?.username])
 
   useEffect(() => {
     if (!socket || !conversacionSeleccionada || nuevoMensaje.trim()) return
@@ -701,10 +709,13 @@ function App() {
                   </div>
                 ))}
                 {contactoEscribiendo && (
-                  <div className="crm-mensaje crm-mensaje--contacto crm-mensaje-typing">
-                    <div className="crm-mensaje-burbuja">
+                  <div className="crm-mensaje crm-mensaje--contacto crm-mensaje-typing" title="Vista previa en vivo — lo que el contacto escribe antes de enviar">
+                    <div className="crm-mensaje-burbuja crm-mensaje-burbuja--live-preview">
+                      <span className="crm-mensaje-peek-label">Vista previa en vivo — escribiendo ahora:</span>
                       <span className="crm-mensaje-peek">{contactoEscribiendo}</span>
-                      <span className="crm-mensaje-peek-label">✍️ escribiendo...</span>
+                      {contactoEscribiendo !== 'escribiendo...' && (
+                        <span className="crm-mensaje-peek-cursor" aria-hidden>|</span>
+                      )}
                     </div>
                   </div>
                 )}

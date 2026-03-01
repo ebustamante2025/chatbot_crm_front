@@ -360,7 +360,7 @@ export default function AdminPreguntasFrecuentes() {
                   required
                   value={formTema.nombre}
                   onChange={(e) => setFormTema({ ...formTema, nombre: e.target.value })}
-                  placeholder="Ej: Medicina Laboral"
+                  placeholder="Ej: Ingresa Tema"
                 />
               </div>
               <div className="crm-faq-field">

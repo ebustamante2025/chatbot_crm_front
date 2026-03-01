@@ -32,7 +32,10 @@ export function setStoredUser(usuario: { id_usuario: number; username: string; r
 
 function authHeaders(): HeadersInit {
   const token = getToken();
-  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json; charset=utf-8',
+    Accept: 'application/json; charset=utf-8',
+  };
   if (token) (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   return headers;
 }
@@ -69,7 +72,7 @@ export interface LoginResponse {
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', Accept: 'application/json; charset=utf-8' },
     body: JSON.stringify({ username: username.trim(), password }),
   });
   const data = await res.json().catch(() => ({}));
@@ -220,7 +223,7 @@ export async function asignarConversacion(conversacionId: number, usuarioId: num
 export async function cerrarConversacion(conversacionId: number, datos?: { motivo?: string; notas?: string }): Promise<unknown> {
   const res = await fetch(`${API_BASE}/conversaciones/${conversacionId}/cerrar`, {
     method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: datos ? JSON.stringify(datos) : undefined,
   });
   if (!res.ok) throw new Error('Error al cerrar conversación');
@@ -234,7 +237,7 @@ export async function transferirConversacion(
 ): Promise<unknown> {
   const res = await fetch(`${API_BASE}/conversaciones/${conversacionId}/transferir`, {
     method: 'POST',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify({ usuario_destino_id: usuarioDestinoId, motivo }),
   });
   if (!res.ok) {

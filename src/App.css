@@ -485,20 +485,47 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
-.crm-mensaje-peek {
-  display: block;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.85);
-  word-wrap: break-word;
-  line-height: 1.4;
+.crm-mensaje-burbuja--live-preview {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(100, 180, 255, 0.4);
+  padding: 10px 12px;
 }
 
 .crm-mensaje-peek-label {
   display: block;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.5);
   font-style: italic;
-  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.crm-mensaje-typing .crm-mensaje-peek-label {
+  color: rgba(150, 210, 255, 0.9);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.crm-mensaje-peek {
+  display: block;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.95);
+  word-wrap: break-word;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  min-height: 1.4em;
+}
+
+.crm-mensaje-peek-cursor {
+  display: inline-block;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  animation: crm-cursor-blink 1s step-end infinite;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+}
+
+@keyframes crm-cursor-blink {
+  50% { opacity: 0; }
 }
 
 .crm-mensaje-hora {

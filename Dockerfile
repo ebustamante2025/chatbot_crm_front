@@ -10,6 +10,8 @@ COPY package*.json ./
 RUN npm ci --only=production=false
 
 COPY . .
+# En Docker, nginx hace proxy de /api y /socket.io al backend (mismo origen)
+ENV VITE_API_URL=/api
 RUN npm run build
 
 # Etapa 2: Producción con Nginx
