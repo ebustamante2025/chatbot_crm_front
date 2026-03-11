@@ -40,6 +40,20 @@ function nombreCorto(nombreCompleto?: string | null | undefined, fallback?: stri
 const ROLES_DISPONIBLES = ['ADMIN', 'ASESOR', 'SUPERVISOR', 'VENTAS', 'AGENTE']
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'TI', 'PP']
 
+/** Opciones para parametrizar vistas por usuario. Si está vacío, se usa el comportamiento por rol. */
+export const OPCIONES_VISTAS: { id: string; label: string; grupo: 'tab' | 'admin' }[] = [
+  { id: 'asesor', label: 'Tab Asesor', grupo: 'tab' },
+  { id: 'administrador', label: 'Tab Administrador', grupo: 'tab' },
+  { id: 'historial', label: 'Tab Historial', grupo: 'tab' },
+  { id: 'seguimiento_bot', label: 'Tab Seguimiento Bot', grupo: 'tab' },
+  { id: 'admin_faq', label: 'Tab Admin Preg. Frec.', grupo: 'tab' },
+  { id: 'dashboard', label: 'Panel Admin — Dashboard', grupo: 'admin' },
+  { id: 'dashboard-bot', label: 'Panel Admin — Dashboard Bot', grupo: 'admin' },
+  { id: 'transferencias', label: 'Panel Admin — Transferencias', grupo: 'admin' },
+  { id: 'usuarios', label: 'Panel Admin — Usuarios', grupo: 'admin' },
+  { id: 'empresas', label: 'Panel Admin — Empresas', grupo: 'admin' },
+]
+
 // =============================
 // Dashboard
 // =============================
@@ -127,7 +141,7 @@ function DashboardSection() {
       <div className="crm-admin-conv-resumen">
         <h4>Conversaciones</h4>
         <div className="crm-admin-conv-bars">
-          <div className="crm-admin-conv-bar">
+          <div className="crm-admin-conv-bar crm-admin-conv-bar--queue">
             <span className="crm-admin-conv-bar-label">En cola</span>
             <div className="crm-admin-conv-bar-track">
               <div
@@ -137,7 +151,7 @@ function DashboardSection() {
             </div>
             <span className="crm-admin-conv-bar-value">{stats.conversaciones.en_cola}</span>
           </div>
-          <div className="crm-admin-conv-bar">
+          <div className="crm-admin-conv-bar crm-admin-conv-bar--assigned">
             <span className="crm-admin-conv-bar-label">Asignadas</span>
             <div className="crm-admin-conv-bar-track">
               <div
@@ -147,7 +161,7 @@ function DashboardSection() {
             </div>
             <span className="crm-admin-conv-bar-value">{stats.conversaciones.asignadas}</span>
           </div>
-          <div className="crm-admin-conv-bar">
+          <div className="crm-admin-conv-bar crm-admin-conv-bar--active">
             <span className="crm-admin-conv-bar-label">Activas</span>
             <div className="crm-admin-conv-bar-track">
               <div
@@ -157,7 +171,7 @@ function DashboardSection() {
             </div>
             <span className="crm-admin-conv-bar-value">{stats.conversaciones.activas}</span>
           </div>
-          <div className="crm-admin-conv-bar">
+          <div className="crm-admin-conv-bar crm-admin-conv-bar--closed">
             <span className="crm-admin-conv-bar-label">Cerradas</span>
             <div className="crm-admin-conv-bar-track">
               <div
@@ -228,7 +242,15 @@ function DashboardSection() {
                       <td className="crm-admin-cell-fecha">
                         {new Date(a.creada_en).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="crm-admin-cell-muted">—</td>
+                      <td>
+                        {a.estado === 'CERRADA' && a.segundos_duracion != null ? (
+                          <span className="crm-admin-timer crm-admin-timer--closed" title="Duración total de la conversación">
+                            {formatTiempo(a.segundos_duracion)}
+                          </span>
+                        ) : (
+                          <span className="crm-admin-cell-muted">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
               </tbody>
@@ -329,7 +351,11 @@ function BotConversacionesTabla({ conversaciones, tick }: { conversaciones: Conv
               <td className="crm-admin-cell-fecha">
                 {new Date(c.creada_en).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
               </td>
-              <td className="crm-admin-cell-muted">{formatTiempo(c.segundos_desde_inicio)}</td>
+              <td>
+                <span className="crm-admin-timer crm-admin-timer--closed" title="Duración total">
+                  {formatTiempo(c.segundos_desde_inicio)}
+                </span>
+              </td>
               <td className="crm-admin-cell-muted">—</td>
             </tr>
           ))}
@@ -453,7 +479,7 @@ function UsuariosSection() {
   const [error, setError] = useState<string | null>(null)
 
   // Form state para editar
-  const [formEdit, setFormEdit] = useState({ username: '', nombre_completo: '', rol: '', nivel: 1, estado: true, tipo_documento: '', documento: '' })
+  const [formEdit, setFormEdit] = useState({ username: '', nombre_completo: '', rol: '', nivel: 1, estado: true, tipo_documento: '', documento: '', vistas_permitidas: [] as string[] })
   // Form state para nuevo
   const [formNuevo, setFormNuevo] = useState({ username: '', nombre_completo: '', password: '', rol: 'ASESOR', tipo_documento: '', documento: '' })
   // Form state para password
@@ -482,6 +508,7 @@ function UsuariosSection() {
       estado: u.estado,
       tipo_documento: u.tipo_documento || '',
       documento: u.documento || '',
+      vistas_permitidas: Array.isArray(u.vistas_permitidas) ? [...u.vistas_permitidas] : [],
     })
     setModalUsuario(u)
   }
@@ -489,7 +516,10 @@ function UsuariosSection() {
   const guardarEditar = async () => {
     if (!modalUsuario) return
     try {
-      await actualizarUsuario(modalUsuario.id_usuario, formEdit)
+      await actualizarUsuario(modalUsuario.id_usuario, {
+        ...formEdit,
+        vistas_permitidas: formEdit.vistas_permitidas.length > 0 ? formEdit.vistas_permitidas : null,
+      })
       setModalUsuario(null)
       cargar()
     } catch (e) {
@@ -686,6 +716,27 @@ function UsuariosSection() {
                 <div className="crm-admin-field">
                   <label>Documento</label>
                   <input value={formEdit.documento} onChange={(e) => setFormEdit({ ...formEdit, documento: e.target.value })} />
+                </div>
+              </div>
+              <div className="crm-admin-field">
+                <label>Vistas permitidas (opcional)</label>
+                <p className="crm-admin-field-hint">Si deja vacío, se usan los accesos según el rol. Marque solo las vistas que este usuario puede ver.</p>
+                <div className="crm-admin-vistas-grid">
+                  {OPCIONES_VISTAS.map((opt) => (
+                    <label key={opt.id} className="crm-admin-vista-check">
+                      <input
+                        type="checkbox"
+                        checked={formEdit.vistas_permitidas.includes(opt.id)}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...formEdit.vistas_permitidas, opt.id]
+                            : formEdit.vistas_permitidas.filter((v) => v !== opt.id)
+                          setFormEdit({ ...formEdit, vistas_permitidas: next })
+                        }}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
               <div className="crm-admin-modal-footer">
@@ -1040,16 +1091,26 @@ function TransferenciasSection() {
 // =============================
 // Portal Admin Principal
 // =============================
-export default function AdminPortal({ socket }: { socket: Socket | null }) {
-  const [seccion, setSeccion] = useState<SeccionAdmin>('dashboard')
+const SECCIONES_ADMIN: { id: SeccionAdmin; label: string; icon: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'dashboard-bot', label: 'Dashboard Bot', icon: '🤖' },
+  { id: 'transferencias', label: 'Transferencias', icon: '🔄' },
+  { id: 'usuarios', label: 'Usuarios', icon: '👥' },
+  { id: 'empresas', label: 'Empresas', icon: '🏢' },
+]
 
-  const navItems: { id: SeccionAdmin; label: string; icon: string }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'dashboard-bot', label: 'Dashboard Bot', icon: '🤖' },
-    { id: 'transferencias', label: 'Transferencias', icon: '🔄' },
-    { id: 'usuarios', label: 'Usuarios', icon: '👥' },
-    { id: 'empresas', label: 'Empresas', icon: '🏢' },
-  ]
+export default function AdminPortal({ socket, vistasPermitidas }: { socket: Socket | null; vistasPermitidas?: string[] | null }) {
+  // Si hay vistas parametrizadas, filtrar solo secciones permitidas; si no, mostrar todas
+  const navItems = (Array.isArray(vistasPermitidas) && vistasPermitidas.length > 0)
+    ? SECCIONES_ADMIN.filter((item) => vistasPermitidas.includes(item.id))
+    : SECCIONES_ADMIN
+
+  const seccionPorDefecto = navItems[0]?.id ?? 'dashboard'
+  const [seccion, setSeccion] = useState<SeccionAdmin>(navItems.some((n) => n.id === 'dashboard') ? 'dashboard' : seccionPorDefecto)
+
+  useEffect(() => {
+    if (!navItems.some((n) => n.id === seccion)) setSeccion(seccionPorDefecto)
+  }, [navItems, seccionPorDefecto, seccion])
 
   return (
     <div className="crm-admin-portal">

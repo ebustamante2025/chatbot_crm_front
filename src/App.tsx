@@ -6,6 +6,8 @@ import {
   listarConversaciones,
   obtenerConversacion,
   enviarMensaje,
+  editarMensajeContacto,
+  eliminarMensajeContacto,
   asignarConversacion,
   cerrarConversacion,
   transferirConversacion,
@@ -19,21 +21,23 @@ import type { ConversacionConMensajes } from './services/api'
 import Login from './Login'
 import AdminPreguntasFrecuentes from './AdminPreguntasFrecuentes'
 import AdminPortal from './AdminPortal'
+import HistorialConversaciones from './HistorialConversaciones'
+import SeguimientoBotConversaciones from './SeguimientoBotConversaciones'
 import './App.css'
 
 const TODOS_LOS_TABS: { id: RolCRM; label: string }[] = [
   { id: 'asesor', label: 'Asesor' },
   { id: 'administrador', label: 'Administrador' },
-  { id: 'supervisor', label: 'Supervisor' },
-  { id: 'ventas', label: 'Ventas' },
+  { id: 'historial', label: 'Historial' },
+  { id: 'seguimiento_bot', label: 'Seguimiento Bot' },
   { id: 'admin_faq', label: 'Admin Preg. Frec.' },
 ]
 
 // Tabs visibles según el rol del usuario en BD
 const TABS_POR_ROL: Record<string, RolCRM[]> = {
-  ADMIN:      ['asesor', 'administrador', 'supervisor', 'ventas', 'admin_faq'],
-  SUPERVISOR: ['asesor', 'supervisor', 'ventas', 'admin_faq'],
-  VENTAS:     ['asesor', 'ventas'],
+  ADMIN:      ['asesor', 'administrador', 'historial', 'seguimiento_bot', 'admin_faq'],
+  SUPERVISOR: ['asesor', 'historial', 'seguimiento_bot', 'admin_faq'],
+  VENTAS:     ['asesor'],
   ASESOR:     ['asesor'],
   AGENTE:     ['asesor'],
 }
@@ -64,7 +68,7 @@ function nombreCorto(nombreCompleto?: string | null, fallback?: string): string 
 function App() {
   const [autenticado, setAutenticado] = useState<boolean | null>(null)
   const socket = useSocket()
-  const [usuarioAgente, setUsuarioAgente] = useState<{ id_usuario: number; username: string; nombre_completo?: string | null; rol?: string } | null>(getStoredUser())
+  const [usuarioAgente, setUsuarioAgente] = useState<{ id_usuario: number; username: string; nombre_completo?: string | null; rol?: string; vistas_permitidas?: string[] | null } | null>(getStoredUser())
   const [rolActivo, setRolActivo] = useState<RolCRM>('asesor')
   const [conversaciones, setConversaciones] = useState<ConversacionConMensajes[]>([])
   const [conversacionSeleccionada, setConversacionSeleccionada] = useState<ConversacionConMensajes | null>(null)
@@ -85,8 +89,39 @@ function App() {
   const [transfiriendo, setTransfiriendo] = useState(false)
   const [transferirError, setTransferirError] = useState<string | null>(null)
   const [sesionReemplazada, setSesionReemplazada] = useState(false)
+  const [mensajeEditandoId, setMensajeEditandoId] = useState<number | null>(null)
+  const [mensajeEditandoTexto, setMensajeEditandoTexto] = useState('')
+  const [mensajeEditandoPreview, setMensajeEditandoPreview] = useState<{ contenido: string; creado_en: string } | null>(null)
+  const [editandoMensaje, setEditandoMensaje] = useState(false)
+  const [contextMenuMensaje, setContextMenuMensaje] = useState<{ idMensaje: number; contenido: string; creado_en: string; top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+  const conversacionSeleccionadaIdRef = useRef<number | null>(null)
   const chatMensajesRef = useRef<HTMLDivElement>(null)
+
+  const MENSAJE_EDITABLE_MINUTOS = 3
+  const isMensajeEditable = (creadoEn: string) => {
+    const creado = new Date(creadoEn).getTime()
+    return creado > Date.now() - MENSAJE_EDITABLE_MINUTOS * 60 * 1000
+  }
+
+  /** id_mensaje puede venir como number o string del servidor; devolver número para menú y API */
+  const idMensajeNumerico = (id: number | string | undefined): number | null => {
+    if (id === undefined || id === null) return null
+    const s = String(id)
+    if (s.startsWith('temp')) return null
+    const n = Number(id)
+    return Number.isNaN(n) ? null : n
+  }
+
+  // Cerrar menú al hacer clic fuera o Escape (backdrop cierra al hacer clic)
+  useEffect(() => {
+    if (!contextMenuMensaje) return
+    const cerrar = () => setContextMenuMensaje(null)
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') cerrar() }
+    window.addEventListener('keydown', onKeyDown)
+    return () => { window.removeEventListener('keydown', onKeyDown) }
+  }, [contextMenuMensaje])
 
   // Registrar callback para cuando la sesión es reemplazada por otro login
   useEffect(() => {
@@ -108,7 +143,7 @@ function App() {
     }
     getMe()
       .then(({ usuario }) => {
-        setUsuarioAgente({ id_usuario: usuario.id_usuario, username: usuario.username, nombre_completo: usuario.nombre_completo, rol: usuario.rol })
+        setUsuarioAgente({ id_usuario: usuario.id_usuario, username: usuario.username, nombre_completo: usuario.nombre_completo, rol: usuario.rol, vistas_permitidas: usuario.vistas_permitidas ?? undefined })
         setAutenticado(true)
       })
       .catch(() => {
@@ -117,6 +152,17 @@ function App() {
         setAutenticado(false)
       })
   }, [])
+
+  // Si el usuario tiene vistas parametrizadas y el tab activo no está permitido, cambiar al primer tab permitido
+  useEffect(() => {
+    const vistas = usuarioAgente?.vistas_permitidas
+    if (!Array.isArray(vistas) || vistas.length === 0) return
+    const tabIds = TODOS_LOS_TABS.map((t) => t.id)
+    const permitidos = vistas.filter((v): v is RolCRM => tabIds.includes(v as RolCRM))
+    if (permitidos.length > 0 && !permitidos.includes(rolActivo)) {
+      setRolActivo(permitidos[0])
+    }
+  }, [usuarioAgente?.vistas_permitidas, rolActivo])
 
   const cargarConversaciones = useCallback(async () => {
     setCargando(true)
@@ -167,6 +213,11 @@ function App() {
     }
   }, [socket, conversacionSeleccionada?.id_conversacion])
 
+  // Mantener ref actualizada para que los listeners de socket sepan qué conversación está abierta
+  useEffect(() => {
+    conversacionSeleccionadaIdRef.current = conversacionSeleccionada?.id_conversacion ?? null
+  }, [conversacionSeleccionada?.id_conversacion])
+
   // WebSocket: escuchar nuevos mensajes en tiempo real
   useEffect(() => {
     if (!socket) return
@@ -190,9 +241,32 @@ function App() {
         return { ...prev, mensajes: [...mensajesActuales, mensaje] }
       })
     }
+    const onMessageUpdated = (mensaje: { id_mensaje: number; conversacion_id: number; contenido: string; creado_en: string; tipo_emisor: string; [k: string]: unknown }) => {
+      setConversacionSeleccionada((prev) => {
+        if (!prev || prev.id_conversacion !== mensaje.conversacion_id) return prev
+        const mensajes = (prev.mensajes || []).map((m) =>
+          m.id_mensaje === mensaje.id_mensaje ? { ...m, contenido: mensaje.contenido, creado_en: mensaje.creado_en } : m
+        )
+        return { ...prev, mensajes }
+      })
+    }
+    const onMessageDeleted = (data: { id_mensaje: number; conversacion_id: number }) => {
+      const idNum = Number(data.id_mensaje)
+      if (!Number.isFinite(idNum)) return
+      setConversacionSeleccionada((prev) => {
+        if (!prev || Number(prev.id_conversacion) !== Number(data.conversacion_id)) return prev
+        const mensajes = (prev.mensajes || []).filter((m) => Number(m.id_mensaje) !== idNum)
+        return { ...prev, mensajes }
+      })
+      setContextMenuMensaje(null)
+    }
     socket.on('new_message', onNewMessage)
+    socket.on('message_updated', onMessageUpdated)
+    socket.on('message_deleted', onMessageDeleted)
     return () => {
       socket.off('new_message', onNewMessage)
+      socket.off('message_updated', onMessageUpdated)
+      socket.off('message_deleted', onMessageDeleted)
     }
   }, [socket])
 
@@ -203,6 +277,14 @@ function App() {
       cargarConversaciones()
     }
     const onConversationUpdated = (data: { id_conversacion: number; estado: string; transferida?: boolean; agente_destino_id?: number; agente_origen_id?: number }) => {
+      // Si se cerró, quitar de la lista y deseleccionar
+      if (data.estado === 'CERRADA') {
+        setConversaciones((prev) => prev.filter((c) => c.id_conversacion !== data.id_conversacion))
+        setConversacionSeleccionada((prev) =>
+          prev?.id_conversacion === data.id_conversacion ? null : prev
+        )
+        return
+      }
       // Actualizar estado en la lista local
       setConversaciones((prev) =>
         prev.map((c) =>
@@ -231,10 +313,15 @@ function App() {
     const onNewActivity = (_data: { id_conversacion: number }) => {
       cargarConversaciones()
     }
-    // Actividad global en el CRM (cualquier mensaje nuevo en cualquier conversación)
-    // Debounce para evitar recargas excesivas cuando llegan muchos mensajes seguidos
+    // Actividad global en el CRM: refrescar lista y, si el mensaje es de la conversación abierta, refrescar sus mensajes (por si new_message no llegó)
     let crmActivityTimer: ReturnType<typeof setTimeout> | null = null
-    const onCrmActivity = () => {
+    const onCrmActivity = (data: { id_conversacion?: number }) => {
+      const idConv = data?.id_conversacion != null ? Number(data.id_conversacion) : null
+      if (idConv !== null && conversacionSeleccionadaIdRef.current === idConv) {
+        obtenerConversacion(idConv).then((actualizada) => {
+          setConversacionSeleccionada(actualizada)
+        }).catch(() => {})
+      }
       if (crmActivityTimer) clearTimeout(crmActivityTimer)
       crmActivityTimer = setTimeout(() => {
         cargarConversaciones()
@@ -340,7 +427,12 @@ function App() {
     try {
       await cerrarConversacion(conversacionSeleccionada.id_conversacion)
       setConversacionSeleccionada(null)
-      cargarConversaciones()
+      const { conversaciones: lista } = await listarConversaciones()
+      setConversaciones(lista)
+      // Seleccionar la primera de la cola (orden por primer mensaje) para seguir en turno
+      if (lista?.length) {
+        cargarConversacion(lista[0].id_conversacion)
+      }
     } catch (e) {
       console.error('Error cerrando:', e)
     }
@@ -379,7 +471,12 @@ function App() {
       setCerrarCasoMotivo('')
       setCerrarCasoNotas('')
       setConversacionSeleccionada(null)
-      cargarConversaciones()
+      const { conversaciones: lista } = await listarConversaciones()
+      setConversaciones(lista)
+      // Seleccionar la primera de la cola (orden por primer mensaje) para seguir en turno
+      if (lista?.length) {
+        cargarConversacion(lista[0].id_conversacion)
+      }
     } catch (e) {
       console.error('Error cerrando caso:', e)
     } finally {
@@ -459,11 +556,36 @@ function App() {
         contenido,
       })
 
-      // Reemplazar el mensaje temporal con el real del servidor
-      const mensajeReal = (resp as { mensaje?: { id_mensaje: number; creado_en: string } }).mensaje
+      // Reemplazar el mensaje temporal con el real; si el backend envió presentación automática, mostrarla antes
+      const data = resp as {
+        mensaje?: { id_mensaje: number; creado_en: string; contenido?: string; [k: string]: unknown }
+        mensajePresentacion?: { id_mensaje: number; creado_en: string; contenido: string; tipo_emisor: string; [k: string]: unknown }
+      }
+      const mensajeReal = data.mensaje
+      const mensajePresentacion = data.mensajePresentacion
       if (mensajeReal) {
         setConversacionSeleccionada((prev) => {
           if (!prev) return prev
+          const sinTemp = (prev.mensajes || []).filter((m) => (m as { id_mensaje?: unknown }).id_mensaje !== tempId)
+          if (mensajePresentacion && typeof mensajeReal.contenido === 'string') {
+            const intro = {
+              id_mensaje: mensajePresentacion.id_mensaje,
+              tipo_emisor: 'AGENTE',
+              contenido: String(mensajePresentacion.contenido ?? ''),
+              creado_en: mensajePresentacion.creado_en,
+              agente_username: (mensajePresentacion as { agente_username?: string }).agente_username,
+              agente_nombre_completo: (mensajePresentacion as { agente_nombre_completo?: string | null }).agente_nombre_completo ?? null,
+            }
+            const real = {
+              id_mensaje: mensajeReal.id_mensaje,
+              tipo_emisor: 'AGENTE',
+              contenido: mensajeReal.contenido,
+              creado_en: mensajeReal.creado_en,
+              agente_username: (mensajeReal as { agente_username?: string }).agente_username,
+              agente_nombre_completo: (mensajeReal as { agente_nombre_completo?: string | null }).agente_nombre_completo ?? null,
+            }
+            return { ...prev, mensajes: [...sinTemp, intro, real] }
+          }
           const mensajes = (prev.mensajes || []).map((m) =>
             (m as { id_mensaje?: unknown }).id_mensaje === tempId
               ? { ...m, id_mensaje: mensajeReal.id_mensaje, creado_en: mensajeReal.creado_en }
@@ -499,6 +621,60 @@ function App() {
   const formatearFecha = (fecha: string) => {
     const d = new Date(fecha)
     return d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+  }
+  const formatearFechaLlegada = (fecha: string) => {
+    const d = new Date(fecha)
+    return d.toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
+  const handleCancelarEdicionMensaje = () => {
+    setMensajeEditandoId(null)
+    setMensajeEditandoTexto('')
+    setMensajeEditandoPreview(null)
+  }
+  const abrirModalEditar = (idMensaje: number, contenido: string, creadoEn?: string) => {
+    setContextMenuMensaje(null)
+    setMensajeEditandoId(idMensaje)
+    setMensajeEditandoTexto(contenido)
+    setMensajeEditandoPreview({ contenido, creado_en: creadoEn || '' })
+  }
+  const handleGuardarEdicionMensaje = async () => {
+    if (mensajeEditandoId == null || !mensajeEditandoTexto.trim()) return
+    setEditandoMensaje(true)
+    try {
+      await editarMensajeContacto(mensajeEditandoId, mensajeEditandoTexto.trim())
+      setConversacionSeleccionada((prev) => {
+        if (!prev) return prev
+        const mensajes = (prev.mensajes || []).map((m) =>
+          m.id_mensaje === mensajeEditandoId ? { ...m, contenido: mensajeEditandoTexto.trim() } : m
+        )
+        return { ...prev, mensajes }
+      })
+      setMensajeEditandoId(null)
+      setMensajeEditandoTexto('')
+      setMensajeEditandoPreview(null)
+    } catch (e: any) {
+      console.error('Error al editar mensaje:', e)
+      alert(e?.message || 'No se pudo editar el mensaje')
+    } finally {
+      setEditandoMensaje(false)
+    }
+  }
+  const handleEliminarMensaje = async (id: number) => {
+    if (!window.confirm('¿Eliminar este mensaje?')) return
+    try {
+      await eliminarMensajeContacto(id)
+      setContextMenuMensaje(null)
+      setConversacionSeleccionada((prev) => {
+        if (!prev) return prev
+        const idNum = Number(id)
+        const mensajes = (prev.mensajes || []).filter((m) => Number(m.id_mensaje) !== idNum)
+        return { ...prev, mensajes }
+      })
+    } catch (e: any) {
+      console.error('Error al eliminar mensaje:', e)
+      alert(e?.message || 'No se pudo eliminar el mensaje')
+    }
   }
 
   // Scroll automático del chat al final cuando llegan nuevos mensajes
@@ -552,17 +728,27 @@ function App() {
           <h1>CRM ChatBot</h1>
         </div>
         <nav className="crm-tabs">
-          {TODOS_LOS_TABS
-            .filter((t) => {
-              const rolUsuario = usuarioAgente?.rol || 'ASESOR'
-              const permitidos = TABS_POR_ROL[rolUsuario] || TABS_POR_ROL['ASESOR']
-              return permitidos.includes(t.id)
-            })
-            .map((r) => (
+          {((): { id: RolCRM; label: string }[] => {
+            const vistas = usuarioAgente?.vistas_permitidas
+            // Si el usuario tiene vistas parametrizadas (array no vacío), usarlas para los tabs
+            if (Array.isArray(vistas) && vistas.length > 0) {
+              return TODOS_LOS_TABS.filter((t) => vistas.includes(t.id))
+            }
+            // Si no, usar lógica por rol
+            const rolUsuario = usuarioAgente?.rol || 'ASESOR'
+            const permitidos = TABS_POR_ROL[rolUsuario] || TABS_POR_ROL['ASESOR']
+            return TODOS_LOS_TABS.filter((t) => permitidos.includes(t.id))
+          })().map((r) => (
               <button
                 key={r.id}
                 className={`crm-tab ${rolActivo === r.id ? 'crm-tab--active' : ''}`}
-                onClick={() => setRolActivo(r.id)}
+                onClick={() => {
+                  if (r.id === 'admin_faq') {
+                    window.open('http://localhost:3008/', '_blank')
+                    return
+                  }
+                  setRolActivo(r.id)
+                }}
               >
                 {r.label}
               </button>
@@ -580,7 +766,11 @@ function App() {
         {rolActivo === 'admin_faq' ? (
           <AdminPreguntasFrecuentes />
         ) : rolActivo === 'administrador' ? (
-          <AdminPortal socket={socket} />
+          <AdminPortal socket={socket} vistasPermitidas={usuarioAgente?.vistas_permitidas ?? undefined} />
+        ) : rolActivo === 'historial' ? (
+          <HistorialConversaciones />
+        ) : rolActivo === 'seguimiento_bot' ? (
+          <SeguimientoBotConversaciones />
         ) : (
           <>
         <aside className="crm-sidebar">
@@ -607,21 +797,35 @@ function App() {
                   }`}
                   onClick={() => cargarConversacion(c.id_conversacion)}
                 >
-                  <span className="crm-conversacion-empresa">
-                    {c.empresa_nombre || 'Empresa'} {c.empresa_nit ? `(NIT: ${c.empresa_nit})` : ''}
+                  {c.empresa_nit ? (
+                    <span className="crm-conversacion-nit">NIT: {c.empresa_nit}</span>
+                  ) : null}
+                  <span className="crm-conversacion-empresa crm-conversacion-empresa--truncar" title={c.empresa_nombre || ''}>
+                    {c.empresa_nombre || 'Empresa'}
                   </span>
                   <span className="crm-conversacion-nombre">{c.contacto_nombre || 'Sin nombre'}</span>
+                  {(c.primer_mensaje_en || c.creada_en) && (
+                    <span className="crm-conversacion-llegada" title="Fecha y hora">
+                      {formatearFechaLlegada(c.primer_mensaje_en || c.creada_en!)}
+                    </span>
+                  )}
                   {(c.contacto_email || c.contacto_telefono) && (
                     <span className="crm-conversacion-contacto">
                       {[c.contacto_email, c.contacto_telefono].filter(Boolean).join(' · ')}
                     </span>
                   )}
                   <span className="crm-conversacion-estado">
-                    {c.estado === 'EN_COLA' ? 'En cola'
-                      : c.estado === 'ASIGNADA' ? `Asignada — ${nombreCorto((c as any).agente_nombre_completo, c.agente_username)}`
-                      : c.estado === 'ACTIVA' ? `Activa — ${nombreCorto((c as any).agente_nombre_completo, c.agente_username)}`
-                      : c.estado === 'CERRADA' ? 'Cerrada'
-                      : c.estado}
+                    {c.estado === 'EN_COLA' ? (
+                      <span className="crm-conversacion-estado--queue">En cola</span>
+                    ) : c.estado === 'ASIGNADA' ? (
+                      <> <span className="crm-conversacion-estado--assigned">Asignada</span> — {nombreCorto((c as any).agente_nombre_completo, c.agente_username)} </>
+                    ) : c.estado === 'ACTIVA' ? (
+                      <> <span className="crm-conversacion-estado--active">Activa</span> — {nombreCorto((c as any).agente_nombre_completo, c.agente_username)} </>
+                    ) : c.estado === 'CERRADA' ? (
+                      <span className="crm-conversacion-estado--cerrada">Cerrada</span>
+                    ) : (
+                      c.estado
+                    )}
                   </span>
                 </button>
               ))
@@ -641,7 +845,17 @@ function App() {
                   <span className="crm-chat-meta">
                     {conversacionSeleccionada.contacto_email && `${conversacionSeleccionada.contacto_email} · `}
                     {conversacionSeleccionada.contacto_telefono && `${conversacionSeleccionada.contacto_telefono} · `}
-                    {conversacionSeleccionada.estado === 'EN_COLA' ? 'En cola — toma la conversación para chatear' : labelEstado(conversacionSeleccionada.estado)}
+                    {conversacionSeleccionada.estado === 'EN_COLA' ? (
+                      <span className="crm-conversacion-estado--queue">En cola — toma la conversación para chatear</span>
+                    ) : (
+                      <>
+                        <span className={
+                          conversacionSeleccionada.estado === 'CERRADA' ? 'crm-conversacion-estado--cerrada' :
+                          conversacionSeleccionada.estado === 'ASIGNADA' ? 'crm-conversacion-estado--assigned' :
+                          conversacionSeleccionada.estado === 'ACTIVA' ? 'crm-conversacion-estado--active' : ''
+                        }>{labelEstado(conversacionSeleccionada.estado)}</span>
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className="crm-chat-actions">
@@ -697,17 +911,46 @@ function App() {
               </div>
 
               <div className="crm-chat-mensajes" ref={chatMensajesRef}>
-                {(conversacionSeleccionada.mensajes || []).map((m) => (
-                  <div
-                    key={typeof m.id_mensaje !== 'undefined' ? String(m.id_mensaje) : `msg-${m.creado_en}`}
-                    className={`crm-mensaje crm-mensaje--${m.tipo_emisor.toLowerCase()}`}
-                  >
-                    <div className="crm-mensaje-burbuja">
-                      <span className="crm-mensaje-contenido">{m.contenido}</span>
-                      <span className="crm-mensaje-hora">{formatearFecha(m.creado_en)}</span>
+                {(conversacionSeleccionada.mensajes || []).map((m) => {
+                  const idNum = idMensajeNumerico((m as { id_mensaje?: number | string }).id_mensaje)
+                  const tipo = String((m as { tipo_emisor?: string }).tipo_emisor || '').toUpperCase()
+                  const esAgenteConMenu =
+                    tipo === 'AGENTE' &&
+                    idNum != null &&
+                    Number((m as { usuario_id?: number }).usuario_id) === Number(usuarioAgente?.id_usuario)
+                  const esConMenu = esAgenteConMenu
+                  return (
+                    <div
+                      key={typeof m.id_mensaje !== 'undefined' ? String(m.id_mensaje) : `msg-${m.creado_en}`}
+                      className={`crm-mensaje crm-mensaje--${tipo.toLowerCase()} ${esConMenu ? 'crm-mensaje--acciones' : ''}`}
+                    >
+                      <div
+                        className="crm-mensaje-burbuja"
+                        onClick={esConMenu ? (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                          setContextMenuMensaje({
+                            idMensaje: idNum!,
+                            contenido: m.contenido,
+                            creado_en: m.creado_en,
+                            top: rect.bottom + 4,
+                            left: rect.left,
+                          })
+                        } : undefined}
+                        role={esConMenu ? 'button' : undefined}
+                        aria-label={esConMenu ? 'Opciones del mensaje' : undefined}
+                        title={esConMenu ? 'Clic para editar o eliminar' : undefined}
+                      >
+                        <span className="crm-mensaje-contenido">{m.contenido}</span>
+                        <span className="crm-mensaje-meta">
+                          {esConMenu && <span className="crm-mensaje-flecha" aria-hidden>▼</span>}
+                          <span className="crm-mensaje-hora">{formatearFecha(m.creado_en)}</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 {contactoEscribiendo && (
                   <div className="crm-mensaje crm-mensaje--contacto crm-mensaje-typing" title="Vista previa en vivo — lo que el contacto escribe antes de enviar">
                     <div className="crm-mensaje-burbuja crm-mensaje-burbuja--live-preview">
@@ -733,6 +976,93 @@ function App() {
                   Enviar
                 </button>
               </form>
+
+              {/* Menú contextual (igual que widget: clic en mensaje, menú oscuro con iconos) */}
+              {contextMenuMensaje && (
+                <>
+                  <div className="crm-menu-mensaje-backdrop" onClick={() => setContextMenuMensaje(null)} aria-hidden="true" />
+                  <div
+                    ref={contextMenuRef}
+                    className="crm-menu-mensaje"
+                    role="menu"
+                    aria-label="Opciones del mensaje"
+                    style={{ top: contextMenuMensaje.top, left: contextMenuMensaje.left }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="crm-menu-mensaje-item crm-menu-mensaje-item--editar"
+                      onClick={() => abrirModalEditar(contextMenuMensaje.idMensaje, contextMenuMensaje.contenido, contextMenuMensaje.creado_en)}
+                      disabled={!isMensajeEditable(contextMenuMensaje.creado_en)}
+                      title="Editar mensaje"
+                    >
+                      <svg className="crm-menu-mensaje-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="crm-menu-mensaje-item crm-menu-mensaje-item--eliminar"
+                      onClick={() => {
+                        setContextMenuMensaje(null)
+                        handleEliminarMensaje(contextMenuMensaje.idMensaje)
+                      }}
+                      disabled={!isMensajeEditable(contextMenuMensaje.creado_en)}
+                      title="Eliminar mensaje"
+                    >
+                      <svg className="crm-menu-mensaje-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                      Eliminar
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Modal pequeño para editar mensaje (muestra: preview del mensaje + campo para el cambio) */}
+              {mensajeEditandoId != null && (
+                <div className="crm-modal-overlay" onClick={() => !editandoMensaje && handleCancelarEdicionMensaje()}>
+                  <div className="crm-modal crm-modal-editar-mensaje" onClick={(e) => e.stopPropagation()}>
+                    <div className="crm-modal-editar-header">
+                      <h3>Edita el mensaje</h3>
+                      <button type="button" className="crm-modal-editar-cerrar" onClick={handleCancelarEdicionMensaje} disabled={editandoMensaje} aria-label="Cerrar">
+                        ×
+                      </button>
+                    </div>
+                    <div className="crm-modal-editar-preview">
+                      <div className="crm-mensaje-burbuja crm-mensaje-burbuja--preview">
+                        <span className="crm-mensaje-contenido">{mensajeEditandoPreview?.contenido ?? mensajeEditandoTexto}</span>
+                        <span className="crm-mensaje-hora">{mensajeEditandoPreview?.creado_en ? formatearFecha(mensajeEditandoPreview.creado_en) : ''}</span>
+                      </div>
+                    </div>
+                    <label className="crm-modal-editar-label">Escribe un mensaje</label>
+                    <textarea
+                      value={mensajeEditandoTexto}
+                      onChange={(e) => setMensajeEditandoTexto(e.target.value)}
+                      rows={2}
+                      disabled={editandoMensaje}
+                      className="crm-mensaje-editar-input"
+                      placeholder="Escribe un mensaje..."
+                    />
+                    <div className="crm-mensaje-editar-actions">
+                      <button type="button" className="crm-btn crm-btn--small crm-btn--secondary" onClick={handleCancelarEdicionMensaje} disabled={editandoMensaje}>
+                        Cancelar
+                      </button>
+                      <button type="button" className="crm-btn crm-btn--small crm-btn--confirm-edit" onClick={handleGuardarEdicionMensaje} disabled={editandoMensaje || !mensajeEditandoTexto.trim()} title="Guardar cambio">
+                        <svg className="crm-btn-icon crm-btn-icon--guardar" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="crm-chat-empty">

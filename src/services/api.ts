@@ -16,17 +16,17 @@ export function clearAuth(): void {
   localStorage.removeItem(USER_KEY);
 }
 
-export function getStoredUser(): { id_usuario: number; username: string; rol: string } | null {
+export function getStoredUser(): { id_usuario: number; username: string; rol: string; vistas_permitidas?: string[] | null } | null {
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as { id_usuario: number; username: string; rol: string };
+    return JSON.parse(raw) as { id_usuario: number; username: string; rol: string; vistas_permitidas?: string[] | null };
   } catch {
     return null;
   }
 }
 
-export function setStoredUser(usuario: { id_usuario: number; username: string; rol: string }): void {
+export function setStoredUser(usuario: { id_usuario: number; username: string; rol: string; vistas_permitidas?: string[] | null }): void {
   localStorage.setItem(USER_KEY, JSON.stringify(usuario));
 }
 
@@ -80,7 +80,7 @@ export async function login(username: string, password: string): Promise<LoginRe
   return data as LoginResponse;
 }
 
-export async function getMe(): Promise<{ usuario: { id_usuario: number; username: string; nombre_completo?: string | null; rol: string } }> {
+export async function getMe(): Promise<{ usuario: { id_usuario: number; username: string; nombre_completo?: string | null; rol: string; vistas_permitidas?: string[] | null } }> {
   const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
   if (!res.ok) {
     await checkSessionReplaced(res);
@@ -153,7 +153,12 @@ export interface ConversacionConMensajes {
   empresa_nombre?: string;
   agente_username?: string;
   agente_nombre_completo?: string | null;
-  mensajes: Array<{
+  ultima_actividad_en?: string;
+  cerrada_en?: string;
+  creada_en?: string;
+  /** Fecha/hora del primer mensaje (para cola por orden de llegada) */
+  primer_mensaje_en?: string | null;
+  mensajes?: Array<{
     id_mensaje: number | string; // string para IDs temporales (optimistic update)
     tipo_emisor: string;
     contenido: string;
@@ -185,6 +190,66 @@ export async function obtenerConversacion(id: number): Promise<ConversacionConMe
   return res.json();
 }
 
+/** Historial: una entrada por contacto (conversaciones cerradas agrupadas) */
+export interface HistorialCerradaItem {
+  id_conversacion: number;
+  empresa_id: number;
+  contacto_id: number;
+  cerrada_en?: string;
+  ultima_actividad_en?: string;
+  creada_en?: string;
+  empresa_nombre?: string;
+  empresa_nit?: string;
+  contacto_nombre?: string;
+  contacto_email?: string;
+  contacto_telefono?: string;
+  agente_username?: string;
+  agente_nombre_completo?: string | null;
+}
+
+export async function listarHistorialCerradas(): Promise<{ conversaciones: HistorialCerradaItem[] }> {
+  const res = await fetch(`${API_BASE}/conversaciones/historial-cerradas`, { headers: authHeaders() });
+  if (!res.ok) {
+    await checkSessionReplaced(res);
+    throw new Error('Error al cargar historial');
+  }
+  return res.json();
+}
+
+/** Mensaje en historial de contacto */
+export interface HistorialContactoMensaje {
+  id_mensaje: number;
+  conversacion_id: number;
+  tipo_emisor: string;
+  contenido: string;
+  creado_en: string;
+  contacto_nombre?: string;
+  agente_username?: string;
+  agente_nombre_completo?: string | null;
+}
+
+/** Historial completo de un contacto: todos los mensajes en lista plana (sin bloques) */
+export interface HistorialContactoResponse {
+  contacto_nombre: string;
+  contacto_email?: string | null;
+  contacto_telefono?: string | null;
+  empresa_nombre: string;
+  empresa_nit?: string | null;
+  mensajes: HistorialContactoMensaje[];
+}
+
+export async function obtenerHistorialContacto(empresaId: number, contactoId: number): Promise<HistorialContactoResponse> {
+  const res = await fetch(
+    `${API_BASE}/conversaciones/historial-contacto/${empresaId}/${contactoId}`,
+    { headers: authHeaders() }
+  );
+  if (!res.ok) {
+    await checkSessionReplaced(res);
+    throw new Error('Error al cargar historial del contacto');
+  }
+  return res.json();
+}
+
 export async function enviarMensaje(data: {
   empresa_id: number;
   conversacion_id: number;
@@ -204,6 +269,34 @@ export async function enviarMensaje(data: {
     throw new Error((errData as { message?: string }).message || 'Error al enviar mensaje');
   }
   return res.json();
+}
+
+/** Editar mensaje del contacto. Solo usuario de soporte, solo dentro de 2 minutos. */
+export async function editarMensajeContacto(idMensaje: number, contenido: string): Promise<{ mensaje: unknown }> {
+  const res = await fetch(`${API_BASE}/mensajes/${idMensaje}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ contenido: contenido.trim() }),
+  });
+  if (!res.ok) {
+    await checkSessionReplaced(res);
+    const errData = await res.json().catch(() => ({}));
+    throw new Error((errData as { message?: string }).message || 'No se pudo editar el mensaje');
+  }
+  return res.json();
+}
+
+/** Eliminar mensaje del contacto. Solo usuario de soporte, solo dentro de 2 minutos. */
+export async function eliminarMensajeContacto(idMensaje: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/mensajes/${idMensaje}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    await checkSessionReplaced(res);
+    const errData = await res.json().catch(() => ({}));
+    throw new Error((errData as { message?: string }).message || 'No se pudo eliminar el mensaje');
+  }
 }
 
 export async function asignarConversacion(conversacionId: number, usuarioId: number): Promise<unknown> {
@@ -261,6 +354,7 @@ export interface UsuarioSoporte {
   tipo_documento: string | null;
   documento: string | null;
   creado_en: string;
+  vistas_permitidas?: string[] | null;
 }
 
 export async function listarUsuarios(todos = false): Promise<{ usuarios: UsuarioSoporte[]; total: number }> {
@@ -276,7 +370,7 @@ export async function obtenerUsuario(id: number): Promise<{ usuario: UsuarioSopo
   return res.json();
 }
 
-export async function actualizarUsuario(id: number, data: Partial<{ username: string; rol: string; nivel: number; estado: boolean; tipo_documento: string; documento: string }>): Promise<{ usuario: UsuarioSoporte }> {
+export async function actualizarUsuario(id: number, data: Partial<{ username: string; nombre_completo: string; rol: string; nivel: number; estado: boolean; tipo_documento: string; documento: string; vistas_permitidas: string[] | null }>): Promise<{ usuario: UsuarioSoporte }> {
   const res = await fetch(`${API_BASE}/usuarios-soporte/${id}`, {
     method: 'PUT',
     headers: authHeaders(),
@@ -377,6 +471,9 @@ export interface ActividadReciente {
   id_conversacion: number;
   estado: string;
   creada_en: string;
+  asignada_en?: string | null;
+  cerrada_en?: string | null;
+  segundos_duracion?: number | null;
   contacto_nombre: string | null;
   nombre_empresa: string | null;
   agente_username: string | null;

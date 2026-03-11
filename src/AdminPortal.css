@@ -195,7 +195,18 @@
 .crm-admin-conv-bar-fill--queue { background: #f59e0b; }
 .crm-admin-conv-bar-fill--assigned { background: var(--crm-blue-500); }
 .crm-admin-conv-bar-fill--active { background: #34d399; }
-.crm-admin-conv-bar-fill--closed { background: #10b981; }
+.crm-admin-conv-bar-fill--closed { background: #a78bfa; }
+
+/* Color de etiquetas en el resumen de conversaciones */
+.crm-admin-conv-bar--queue .crm-admin-conv-bar-label { color: #f59e0b; font-weight: 500; }
+.crm-admin-conv-bar--closed .crm-admin-conv-bar-label { color: #a78bfa; font-weight: 500; }
+.crm-admin-conv-bar--queue .crm-admin-conv-bar-value { color: #f59e0b; }
+.crm-admin-conv-bar--closed .crm-admin-conv-bar-value { color: #a78bfa; }
+
+.crm-admin-conv-bar--assigned .crm-admin-conv-bar-label { color: var(--crm-blue-400, #60a5fa); font-weight: 500; }
+.crm-admin-conv-bar--assigned .crm-admin-conv-bar-value { color: var(--crm-blue-400, #60a5fa); }
+.crm-admin-conv-bar--active .crm-admin-conv-bar-label { color: #34d399; font-weight: 500; }
+.crm-admin-conv-bar--active .crm-admin-conv-bar-value { color: #34d399; }
 
 .crm-admin-conv-bar-value {
   width: 36px;
@@ -588,7 +599,34 @@
   gap: 1rem;
 }
 
-/* ===== INFO BOX ===== */
+.crm-admin-field-hint {
+  font-size: 0.8rem;
+  color: var(--crm-text-muted);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.crm-admin-vistas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1.5rem;
+  margin-top: 0.5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.crm-admin-vista-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--crm-text);
+}
+
+.crm-admin-vista-check input {
+  width: auto;
+  margin: 0;
+}
 .crm-admin-info-box {
   padding: 0.75rem 1rem;
   background: rgba(245, 158, 11, 0.1);
@@ -639,6 +677,12 @@
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
   animation: crm-timer-pulse 2s ease-in-out infinite;
+}
+
+/* Duración total cuando la conversación ya está cerrada */
+.crm-admin-timer--closed {
+  background: rgba(167, 139, 250, 0.2);
+  color: #a78bfa;
 }
 
 @keyframes crm-timer-pulse {
@@ -702,7 +746,7 @@
 }
 
 .crm-admin-card--red .crm-admin-card-valor {
-  color: #f87171;
+  color: #a78bfa;
 }
 
 .crm-admin-card--purple {
@@ -795,7 +839,7 @@
 
 .crm-transfer-agent--origen {
   background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  color: #a78bfa;
 }
 
 .crm-transfer-agent--destino {

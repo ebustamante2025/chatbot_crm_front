@@ -1,4 +1,4 @@
-export type RolCRM = 'asesor' | 'administrador' | 'supervisor' | 'ventas' | 'admin_faq';
+export type RolCRM = 'asesor' | 'administrador' | 'admin_faq' | 'historial' | 'seguimiento_bot';
 
 export interface Mensaje {
   id_mensaje: number;
