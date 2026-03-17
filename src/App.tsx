@@ -797,6 +797,9 @@ function App() {
                   }`}
                   onClick={() => cargarConversacion(c.id_conversacion)}
                 >
+                  {(c as any).canal === 'TELEGRAM' && (
+                    <span className="crm-conversacion-canal crm-conversacion-canal--telegram" title="Canal Telegram">Telegram</span>
+                  )}
                   {c.empresa_nit ? (
                     <span className="crm-conversacion-nit">NIT: {c.empresa_nit}</span>
                   ) : null}
@@ -838,7 +841,12 @@ function App() {
             <>
               <div className="crm-chat-header">
                 <div>
-                  <h3>{conversacionSeleccionada.contacto_nombre || 'Contacto'}</h3>
+                  <h3>
+                    {conversacionSeleccionada.contacto_nombre || 'Contacto'}
+                    {(conversacionSeleccionada as any).canal === 'TELEGRAM' && (
+                      <span className="crm-chat-canal crm-chat-canal--telegram" title="Conversación por Telegram"> · Telegram</span>
+                    )}
+                  </h3>
                   <span className="crm-chat-meta crm-chat-meta-empresa">
                     Empresa: {conversacionSeleccionada.empresa_nombre || '—'} {conversacionSeleccionada.empresa_nit ? `(NIT: ${conversacionSeleccionada.empresa_nit})` : ''}
                   </span>

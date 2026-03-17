@@ -228,6 +228,23 @@
   opacity: 0.9;
 }
 
+.crm-conversacion-canal {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 0.35rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+.crm-conversacion-canal--telegram {
+  background: #0088cc;
+  color: white;
+}
+.crm-conversacion-item--active .crm-conversacion-canal--telegram {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
 .crm-conversacion-nit {
   font-size: 0.7rem;
   opacity: 0.85;
@@ -322,6 +339,14 @@
 .crm-chat-header h3 {
   font-size: 1rem;
   font-weight: 600;
+}
+.crm-chat-canal {
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+.crm-chat-canal--telegram {
+  color: #0088cc;
 }
 
 .crm-chat-meta {

@@ -156,14 +156,7 @@ export default function Login({ onSuccess }: LoginProps) {
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? 'Entrando...' : '→  Ingresar'}
           </button>
-          <p className="login-hint">Contacte al administrador si no tiene cuenta.</p>
         </form>
-      </div>
-
-      <div className="login-browsers-info">
-        <span>Navegadores:</span>
-        <span>Google Chrome v81 o superior</span>
-        <span>Firefox v75 o superior</span>
       </div>
     </div>
   )

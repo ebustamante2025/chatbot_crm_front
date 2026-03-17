@@ -157,11 +157,12 @@ export default function AdminPreguntasFrecuentes() {
       })
     } else {
       setEditandoPregunta(null)
+      const temaPorDefecto = temaSeleccionadoId ?? temas[0]?.id ?? 0
       setFormPregunta({
-        tema_id: temaSeleccionadoId || 0,
+        tema_id: temaPorDefecto,
         pregunta: '',
         respuesta: '',
-        orden: preguntas.length + 1,
+        orden: (temaSeleccionadoId ? preguntas.length : 0) + 1,
         estado: true,
       })
     }
@@ -301,44 +302,48 @@ export default function AdminPreguntasFrecuentes() {
               </select>
             </div>
 
-            {temaSeleccionadoId && (
-              <>
-                <div className="crm-faq-panel-header">
-                  <h3>Preguntas de: <span className="crm-faq-tema-nombre">{temaSeleccionadoNombre}</span></h3>
-                  <button className="crm-btn crm-btn--primary" onClick={() => abrirModalPregunta()}>
-                    + Nueva Pregunta
-                  </button>
-                </div>
+            <div className="crm-faq-panel-header">
+              <h3>
+                {temaSeleccionadoId
+                  ? <>Preguntas de: <span className="crm-faq-tema-nombre">{temaSeleccionadoNombre}</span></>
+                  : 'Preguntas frecuentes'}
+              </h3>
+              <button className="crm-btn crm-btn--primary" onClick={() => abrirModalPregunta()}>
+                + Nueva Pregunta
+              </button>
+            </div>
 
-                {cargandoPreguntas ? (
-                  <p className="crm-faq-loading">Cargando preguntas...</p>
-                ) : preguntas.length === 0 ? (
-                  <p className="crm-faq-empty">No hay preguntas para este tema. Crea una para comenzar.</p>
-                ) : (
-                  <div className="crm-faq-lista">
-                    {preguntas.map((p) => (
-                      <div key={p.id} className="crm-faq-item crm-faq-item--pregunta">
-                        <div className="crm-faq-item-info">
-                          <div className="crm-faq-item-titulo">
-                            <span className="crm-faq-badge crm-faq-badge--blue">#{p.orden}</span>
-                            {!p.estado && <span className="crm-faq-badge crm-faq-badge--red">Inactivo</span>}
-                          </div>
-                          <h4 className="crm-faq-pregunta-texto">{p.pregunta}</h4>
-                          <p className="crm-faq-respuesta-preview">{p.respuesta}</p>
+            {temaSeleccionadoId ? (
+              cargandoPreguntas ? (
+                <p className="crm-faq-loading">Cargando preguntas...</p>
+              ) : preguntas.length === 0 ? (
+                <p className="crm-faq-empty">No hay preguntas para este tema. Crea una para comenzar.</p>
+              ) : (
+                <div className="crm-faq-lista">
+                  {preguntas.map((p) => (
+                    <div key={p.id} className="crm-faq-item crm-faq-item--pregunta">
+                      <div className="crm-faq-item-info">
+                        <div className="crm-faq-item-titulo">
+                          <span className="crm-faq-badge crm-faq-badge--blue">#{p.orden}</span>
+                          {!p.estado && <span className="crm-faq-badge crm-faq-badge--red">Inactivo</span>}
                         </div>
-                        <div className="crm-faq-item-acciones">
-                          <button className="crm-faq-btn-icon" onClick={() => abrirModalPregunta(p)} title="Editar">
-                            ✎
-                          </button>
-                          <button className="crm-faq-btn-icon crm-faq-btn-icon--danger" onClick={() => handleEliminarPregunta(p.id)} title="Eliminar">
-                            ✕
-                          </button>
-                        </div>
+                        <h4 className="crm-faq-pregunta-texto">{p.pregunta}</h4>
+                        <p className="crm-faq-respuesta-preview">{p.respuesta}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </>
+                      <div className="crm-faq-item-acciones">
+                        <button className="crm-faq-btn-icon" onClick={() => abrirModalPregunta(p)} title="Editar">
+                          ✎
+                        </button>
+                        <button className="crm-faq-btn-icon crm-faq-btn-icon--danger" onClick={() => handleEliminarPregunta(p.id)} title="Eliminar">
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <p className="crm-faq-empty">Selecciona un tema para ver sus preguntas o usa «Nueva Pregunta» para registrar una (elige el tema en el formulario).</p>
             )}
           </div>
         )}
