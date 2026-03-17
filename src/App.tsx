@@ -742,13 +742,7 @@ function App() {
               <button
                 key={r.id}
                 className={`crm-tab ${rolActivo === r.id ? 'crm-tab--active' : ''}`}
-                onClick={() => {
-                  if (r.id === 'admin_faq') {
-                    window.open('http://localhost:3008/', '_blank')
-                    return
-                  }
-                  setRolActivo(r.id)
-                }}
+                onClick={() => setRolActivo(r.id)}
               >
                 {r.label}
               </button>
