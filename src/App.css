@@ -500,6 +500,7 @@
 }
 
 .crm-mensaje--bot,
+.crm-mensaje--ia360,
 .crm-mensaje--sistema {
   align-self: center;
   max-width: 90%;
@@ -528,8 +529,9 @@
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
-/* Mensaje del bot */
-.crm-mensaje--bot .crm-mensaje-burbuja {
+/* Mensaje del bot / IA360 (asistente automático) */
+.crm-mensaje--bot .crm-mensaje-burbuja,
+.crm-mensaje--ia360 .crm-mensaje-burbuja {
   background: var(--crm-surface);
   border: 1px dashed var(--crm-blue-400);
   color: var(--crm-text-muted);

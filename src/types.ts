@@ -3,7 +3,7 @@ export type RolCRM = 'asesor' | 'administrador' | 'admin_faq' | 'historial' | 's
 export interface Mensaje {
   id_mensaje: number;
   conversacion_id: number;
-  tipo_emisor: 'CONTACTO' | 'AGENTE' | 'BOT' | 'SISTEMA';
+  tipo_emisor: 'CONTACTO' | 'AGENTE' | 'BOT' | 'IA360' | 'SISTEMA';
   contenido: string;
   creado_en: string;
   contacto_nombre?: string;
