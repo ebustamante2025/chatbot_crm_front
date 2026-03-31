@@ -477,6 +477,8 @@ function UsuariosSection() {
   const [modalNuevo, setModalNuevo] = useState(false)
   const [modalPassword, setModalPassword] = useState<UsuarioSoporte | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** Errores de validación/API solo del modal Nuevo Usuario (se muestran dentro del modal, no detrás del overlay). */
+  const [errorNuevoModal, setErrorNuevoModal] = useState<string | null>(null)
 
   // Form state para editar
   const [formEdit, setFormEdit] = useState({ username: '', nombre_completo: '', rol: '', nivel: 1, estado: true, tipo_documento: '', documento: '', vistas_permitidas: [] as string[] })
@@ -527,13 +529,20 @@ function UsuariosSection() {
     }
   }
 
+  const nuevoUsuarioErrorEnPassword = (msg: string | null) =>
+    Boolean(
+      msg &&
+        /contraseña|12 caract|obligatorios|username|password/i.test(msg)
+    )
+
   const crearUsuario = async () => {
+    setError(null)
     if (!formNuevo.username.trim() || !formNuevo.password.trim()) {
-      setError('Username y contraseña son obligatorios')
+      setErrorNuevoModal('Username y contraseña son obligatorios')
       return
     }
     if (formNuevo.password.length < 12) {
-      setError('La contraseña debe tener al menos 12 caracteres')
+      setErrorNuevoModal('La contraseña debe tener al menos 12 caracteres')
       return
     }
     try {
@@ -545,11 +554,12 @@ function UsuariosSection() {
         tipo_documento: formNuevo.tipo_documento || undefined,
         documento: formNuevo.documento || undefined,
       })
+      setErrorNuevoModal(null)
       setModalNuevo(false)
       setFormNuevo({ username: '', nombre_completo: '', password: '', rol: 'ASESOR', tipo_documento: '', documento: '' })
       cargar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al crear usuario')
+      setErrorNuevoModal(e instanceof Error ? e.message : 'Error al crear usuario')
     }
   }
 
@@ -595,7 +605,8 @@ function UsuariosSection() {
 
   return (
     <div className="crm-admin-section">
-      {error && (
+      {/* Con modal Nuevo usuario abierto, ocultar la barra roja global (evita que se vea atenuada detrás del overlay). */}
+      {error && !modalNuevo && (
         <div className="crm-admin-error">
           <span>{error}</span>
           <button onClick={() => setError(null)}>✕</button>
@@ -609,7 +620,16 @@ function UsuariosSection() {
             <input type="checkbox" checked={verTodos} onChange={(e) => setVerTodos(e.target.checked)} />
             Incluir inactivos
           </label>
-          <button className="crm-btn crm-btn--primary" onClick={() => setModalNuevo(true)}>+ Nuevo Usuario</button>
+          <button
+            className="crm-btn crm-btn--primary"
+            onClick={() => {
+              setError(null)
+              setErrorNuevoModal(null)
+              setModalNuevo(true)
+            }}
+          >
+            + Nuevo Usuario
+          </button>
         </div>
       </div>
 
@@ -750,16 +770,42 @@ function UsuariosSection() {
 
       {/* Modal Nuevo Usuario */}
       {modalNuevo && (
-        <div className="crm-admin-modal-overlay" onClick={() => setModalNuevo(false)}>
+        <div
+          className="crm-admin-modal-overlay"
+          onClick={() => {
+            setErrorNuevoModal(null)
+            setModalNuevo(false)
+          }}
+        >
           <div className="crm-admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="crm-admin-modal-header">
               <h3>Nuevo Usuario</h3>
-              <button className="crm-admin-modal-close" onClick={() => setModalNuevo(false)}>✕</button>
+              <button
+                className="crm-admin-modal-close"
+                onClick={() => {
+                  setErrorNuevoModal(null)
+                  setModalNuevo(false)
+                }}
+              >
+                ✕
+              </button>
             </div>
             <div className="crm-admin-modal-body">
+              {errorNuevoModal && !nuevoUsuarioErrorEnPassword(errorNuevoModal) && (
+                <div className="crm-admin-modal-alert" role="alert">
+                  {errorNuevoModal}
+                </div>
+              )}
               <div className="crm-admin-field">
                 <label>Username * (para login)</label>
-                <input value={formNuevo.username} onChange={(e) => setFormNuevo({ ...formNuevo, username: e.target.value })} placeholder="Usuario para iniciar sesión" />
+                <input
+                  value={formNuevo.username}
+                  onChange={(e) => {
+                    setErrorNuevoModal(null)
+                    setFormNuevo({ ...formNuevo, username: e.target.value })
+                  }}
+                  placeholder="Usuario para iniciar sesión"
+                />
               </div>
               <div className="crm-admin-field">
                 <label>Nombre Completo</label>
@@ -767,7 +813,35 @@ function UsuariosSection() {
               </div>
               <div className="crm-admin-field">
                 <label>Contraseña * (mín. 12 caracteres)</label>
-                <input type="password" value={formNuevo.password} onChange={(e) => setFormNuevo({ ...formNuevo, password: e.target.value })} placeholder="Mínimo 12 caracteres" />
+                <input
+                  type="password"
+                  value={formNuevo.password}
+                  onChange={(e) => {
+                    setErrorNuevoModal(null)
+                    setFormNuevo({ ...formNuevo, password: e.target.value })
+                  }}
+                  placeholder="Mínimo 12 caracteres"
+                  className={
+                    errorNuevoModal?.toLowerCase().includes('contraseña') ||
+                    errorNuevoModal?.toLowerCase().includes('obligatorios')
+                      ? 'crm-admin-input--error'
+                      : undefined
+                  }
+                  aria-invalid={Boolean(
+                    errorNuevoModal?.toLowerCase().includes('contraseña') ||
+                      errorNuevoModal?.toLowerCase().includes('obligatorios')
+                  )}
+                />
+                {formNuevo.password.length > 0 && formNuevo.password.length < 12 && (
+                  <span className="crm-admin-field-hint crm-admin-field-hint--warn">
+                    {formNuevo.password.length}/12 caracteres mínimo
+                  </span>
+                )}
+                {errorNuevoModal && nuevoUsuarioErrorEnPassword(errorNuevoModal) && (
+                  <div className="crm-admin-modal-alert crm-admin-modal-alert--inline" role="alert">
+                    {errorNuevoModal}
+                  </div>
+                )}
               </div>
               <div className="crm-admin-field">
                 <label>Rol</label>
@@ -789,8 +863,18 @@ function UsuariosSection() {
                 </div>
               </div>
               <div className="crm-admin-modal-footer">
-                <button className="crm-btn crm-btn--secondary" onClick={() => setModalNuevo(false)}>Cancelar</button>
-                <button className="crm-btn crm-btn--primary" onClick={crearUsuario}>Crear</button>
+                <button
+                  className="crm-btn crm-btn--secondary"
+                  onClick={() => {
+                    setErrorNuevoModal(null)
+                    setModalNuevo(false)
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button className="crm-btn crm-btn--primary" onClick={crearUsuario}>
+                  Crear
+                </button>
               </div>
             </div>
           </div>

@@ -96,6 +96,16 @@
   padding: 0 0.25rem;
 }
 
+[data-theme='light'] .crm-admin-error {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+[data-theme='light'] .crm-admin-error button {
+  color: #b91c1c;
+}
+
 /* ===== DASHBOARD CARDS ===== */
 .crm-admin-dashboard {
   display: flex;
@@ -468,7 +478,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 100;
+  z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -482,6 +492,8 @@
 }
 
 .crm-admin-modal {
+  position: relative;
+  z-index: 1;
   background: var(--crm-surface);
   border: 1px solid var(--crm-border);
   border-radius: 0.75rem;
@@ -491,6 +503,23 @@
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   animation: crm-admin-scaleIn 0.15s ease-out;
+}
+
+/* Alertas dentro del modal (por encima del fondo atenuado de la página) */
+.crm-admin-modal-alert {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  background: rgba(185, 28, 28, 0.95);
+  color: #fff;
+  border: 1px solid #f87171;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.crm-admin-modal-alert--inline {
+  margin-top: 0.5rem;
 }
 
 .crm-admin-modal--sm {

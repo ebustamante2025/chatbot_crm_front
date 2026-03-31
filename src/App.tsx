@@ -23,6 +23,7 @@ import AdminPreguntasFrecuentes from './AdminPreguntasFrecuentes'
 import AdminPortal from './AdminPortal'
 import HistorialConversaciones from './HistorialConversaciones'
 import SeguimientoBotConversaciones from './SeguimientoBotConversaciones'
+import { readAppliedTheme, toggleAndPersistTheme, type CrmTheme } from './crmTheme'
 import './App.css'
 
 const TODOS_LOS_TABS: { id: RolCRM; label: string }[] = [
@@ -94,6 +95,7 @@ function App() {
   const [mensajeEditandoPreview, setMensajeEditandoPreview] = useState<{ contenido: string; creado_en: string } | null>(null)
   const [editandoMensaje, setEditandoMensaje] = useState(false)
   const [contextMenuMensaje, setContextMenuMensaje] = useState<{ idMensaje: number; contenido: string; creado_en: string; top: number; left: number } | null>(null)
+  const [crmTheme, setCrmTheme] = useState<CrmTheme>(() => readAppliedTheme())
   const menuRef = useRef<HTMLDivElement>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const conversacionSeleccionadaIdRef = useRef<number | null>(null)
@@ -709,6 +711,14 @@ function App() {
             ⚠️ Se ha iniciado sesión en otro dispositivo. Solo se permite una sesión activa por usuario.
           </div>
         )}
+        <button
+          type="button"
+          className="crm-theme-toggle login-theme-toggle"
+          onClick={() => setCrmTheme(toggleAndPersistTheme())}
+          aria-label={crmTheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+          {crmTheme === 'dark' ? '🌞' : '🌙'}
+        </button>
         <Login
           onSuccess={() => {
             setSesionReemplazada(false)
@@ -750,6 +760,14 @@ function App() {
         </nav>
         <div className="crm-header-user">
           <span>{nombreCorto(usuarioAgente?.nombre_completo, usuarioAgente?.username)}</span>
+          <button
+            type="button"
+            className="crm-theme-toggle"
+            onClick={() => setCrmTheme(toggleAndPersistTheme())}
+            aria-label={crmTheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          >
+            {crmTheme === 'dark' ? '🌞' : '🌙'}
+          </button>
           <button type="button" className="crm-btn crm-btn--logout" onClick={handleLogout}>
             Cerrar sesión
           </button>

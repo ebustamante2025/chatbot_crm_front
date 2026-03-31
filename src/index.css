@@ -1,5 +1,4 @@
 :root {
-  /* Tema azul principal */
   --crm-blue-50: #eff6ff;
   --crm-blue-100: #dbeafe;
   --crm-blue-200: #bfdbfe;
@@ -11,13 +10,90 @@
   --crm-blue-800: #1e40af;
   --crm-blue-900: #1e3a8a;
   --crm-blue-950: #172554;
+}
 
+/* Oscuro por defecto si aún no hay data-theme (evita variables vacías antes de initCrmTheme). */
+:root:not([data-theme]),
+[data-theme='dark'] {
   --crm-bg: #0f172a;
   --crm-surface: #1e293b;
   --crm-surface-hover: #334155;
   --crm-text: #f1f5f9;
   --crm-text-muted: #94a3b8;
   --crm-border: #334155;
+
+  --crm-header-bg: #1e293b;
+  --crm-header-text: #f1f5f9;
+  --crm-header-border: #334155;
+  --crm-header-tab: #94a3b8;
+  --crm-header-tab-hover-bg: rgba(255, 255, 255, 0.06);
+  --crm-header-user-text: #94a3b8;
+
+  --crm-typing-border: rgba(255, 255, 255, 0.3);
+  --crm-typing-bg: rgba(255, 255, 255, 0.05);
+  --crm-peek-bubble-bg: rgba(255, 255, 255, 0.08);
+  --crm-peek-label: rgba(255, 255, 255, 0.5);
+  --crm-peek-label-typing: rgba(150, 210, 255, 0.9);
+  --crm-peek-text: rgba(255, 255, 255, 0.95);
+  --crm-peek-cursor: rgba(255, 255, 255, 0.8);
+  --crm-live-preview-border: rgba(100, 180, 255, 0.4);
+
+  --crm-menu-mensaje-bg: #1f2937;
+  --crm-menu-mensaje-text: #f3f4f6;
+  --crm-menu-mensaje-muted: #9ca3af;
+  --crm-menu-mensaje-border: rgba(255, 255, 255, 0.1);
+  --crm-menu-mensaje-hover: rgba(255, 255, 255, 0.08);
+
+  --crm-estado-queue: #fbbf24;
+  --crm-estado-assigned: #60a5fa;
+  --crm-estado-active: #34d399;
+  --crm-estado-cerrada: #c4b5fd;
+
+  --crm-header-logout-bg: rgba(255, 255, 255, 0.1);
+  --crm-header-logout-text: #f1f5f9;
+  --crm-header-logout-border: transparent;
+  --crm-header-logout-hover: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme='light'] {
+  --crm-bg: #f1f5f9;
+  --crm-surface: #ffffff;
+  --crm-surface-hover: #e8eef4;
+  --crm-text: #0f172a;
+  --crm-text-muted: #64748b;
+  --crm-border: #cbd5e1;
+
+  --crm-header-bg: #0f172a;
+  --crm-header-text: #f8fafc;
+  --crm-header-border: #1e293b;
+  --crm-header-tab: rgba(248, 250, 252, 0.78);
+  --crm-header-tab-hover-bg: rgba(255, 255, 255, 0.12);
+  --crm-header-user-text: #cbd5e1;
+
+  --crm-typing-border: rgba(15, 23, 42, 0.2);
+  --crm-typing-bg: rgba(15, 23, 42, 0.04);
+  --crm-peek-bubble-bg: rgba(37, 99, 235, 0.1);
+  --crm-peek-label: rgba(15, 23, 42, 0.5);
+  --crm-peek-label-typing: #1d4ed8;
+  --crm-peek-text: #0f172a;
+  --crm-peek-cursor: rgba(15, 23, 42, 0.65);
+  --crm-live-preview-border: rgba(37, 99, 235, 0.35);
+
+  --crm-menu-mensaje-bg: #ffffff;
+  --crm-menu-mensaje-text: #0f172a;
+  --crm-menu-mensaje-muted: #64748b;
+  --crm-menu-mensaje-border: #e2e8f0;
+  --crm-menu-mensaje-hover: #f1f5f9;
+
+  --crm-estado-queue: #b45309;
+  --crm-estado-assigned: #1d4ed8;
+  --crm-estado-active: #047857;
+  --crm-estado-cerrada: #6d28d9;
+
+  --crm-header-logout-bg: rgba(255, 255, 255, 0.12);
+  --crm-header-logout-text: #f8fafc;
+  --crm-header-logout-border: rgba(255, 255, 255, 0.22);
+  --crm-header-logout-hover: rgba(255, 255, 255, 0.22);
 }
 
 * {
