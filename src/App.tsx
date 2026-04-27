@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   clearAuth,
   getStoredUser,
+  getStoredThemeMode,
   getMe,
   listarConversaciones,
   obtenerConversacion,
@@ -12,9 +13,10 @@ import {
   cerrarConversacion,
   transferirConversacion,
   listarUsuarios,
+  setStoredThemeMode,
   setOnSessionReplaced,
 } from './services/api'
-import type { UsuarioSoporte } from './services/api'
+import type { ThemeMode, UsuarioSoporte } from './services/api'
 import { useSocket } from './useSocket'
 import type { RolCRM } from './types'
 import type { ConversacionConMensajes } from './services/api'
@@ -65,7 +67,17 @@ function nombreCorto(nombreCompleto?: string | null, fallback?: string): string 
   return `${partes[0]} ${partes[2]}`
 }
 
+/*
+const OPCIONES_MODO = [
+  { value: 'server-dark', label: 'Servidor · Oscuro' },
+  { value: 'server-light', label: 'Servidor · Claro' },
+  { value: 'local-dark', label: 'Local · Oscuro' },
+  { value: 'local-light', label: 'Local · Claro' },
+]
+*/
+
 function App() {
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(getStoredThemeMode())
   const [autenticado, setAutenticado] = useState<boolean | null>(null)
   const socket = useSocket()
   const [usuarioAgente, setUsuarioAgente] = useState<{ id_usuario: number; username: string; nombre_completo?: string | null; rol?: string; vistas_permitidas?: string[] | null } | null>(getStoredUser())
@@ -98,6 +110,10 @@ function App() {
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const conversacionSeleccionadaIdRef = useRef<number | null>(null)
   const chatMensajesRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', themeMode)
+  }, [themeMode])
 
   const MENSAJE_EDITABLE_MINUTOS = 3
   const isMensajeEditable = (creadoEn: string) => {
@@ -422,6 +438,15 @@ function App() {
     setAutenticado(false)
   }
 
+  const handleCambiarTema = (nuevoTema: ThemeMode) => {
+    setStoredThemeMode(nuevoTema)
+    setThemeModeState(nuevoTema)
+  }
+
+  const alternarTema = () => {
+    handleCambiarTema(themeMode === 'dark' ? 'light' : 'dark')
+  }
+
   const handleCerrar = async () => {
     if (!conversacionSeleccionada) return
     try {
@@ -724,7 +749,7 @@ function App() {
     <div className="crm-app">
       <header className="crm-header">
         <div className="crm-header-brand">
-          <img src="/logo-hgi-white.png" alt="HGI" className="crm-header-logo" />
+          <img src={themeMode === 'light' ? '/logo-hgi.png' : '/logo-hgi-white.png'} alt="HGI" className="crm-header-logo" />
           <h1>CRM ChatBot</h1>
         </div>
         <nav className="crm-tabs">
@@ -750,6 +775,21 @@ function App() {
         </nav>
         <div className="crm-header-user">
           <span>{nombreCorto(usuarioAgente?.nombre_completo, usuarioAgente?.username)}</span>
+          <div className="crm-header-controls">
+            <button
+              type="button"
+              className={`crm-theme-toggle ${themeMode === 'light' ? 'crm-theme-toggle--light' : ''}`}
+              onClick={alternarTema}
+              title={themeMode === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+            >
+              <span className={`crm-theme-toggle__icon ${themeMode === 'dark' ? 'crm-theme-toggle__icon--dark' : 'crm-theme-toggle__icon--light'}`} aria-hidden="true">
+                {themeMode === 'dark' ? '🌙' : '☀'}
+              </span>
+              <span className="crm-theme-toggle__label">
+                {themeMode === 'dark' ? 'Tema oscuro' : 'Tema claro'}
+              </span>
+            </button>
+          </div>
           <button type="button" className="crm-btn crm-btn--logout" onClick={handleLogout}>
             Cerrar sesión
           </button>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
+import { isLocalMode } from './services/api'
 
 /**
  * URL del backend para WebSocket. Debe ser la misma que usa la API para que
@@ -21,6 +22,10 @@ export function useSocket(): Socket | null {
   const [socket, setSocket] = useState<Socket | null>(null)
 
   useEffect(() => {
+    if (isLocalMode()) {
+      setSocket(null)
+      return
+    }
     const url = getSocketUrl()
     const s = io(url, { path: '/socket.io', transports: ['polling', 'websocket'] })
     s.on('connect', () => {

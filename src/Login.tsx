@@ -11,8 +11,6 @@ export default function Login({ onSuccess }: LoginProps) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-
-  // Estado para forzar cambio de contraseña
   const [debeCambiar, setDebeCambiar] = useState(false)
   const [nuevaPassword, setNuevaPassword] = useState('')
   const [confirmarPassword, setConfirmarPassword] = useState('')
@@ -30,8 +28,6 @@ export default function Login({ onSuccess }: LoginProps) {
       const data = await login(username.trim(), password)
       setToken(data.token)
       setStoredUser(data.usuario)
-
-      // Si tiene contraseña temporal, forzar cambio antes de entrar
       if (data.debe_cambiar_password) {
         setDebeCambiar(true)
       } else {
@@ -66,10 +62,7 @@ export default function Login({ onSuccess }: LoginProps) {
     try {
       await cambiarPasswordPropia(nuevaPassword)
       setMensajeExito('Contraseña actualizada correctamente. Ingresando...')
-      // Esperar un momento y luego entrar
-      setTimeout(() => {
-        onSuccess()
-      }, 1500)
+      setTimeout(() => onSuccess(), 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cambiar contraseña')
     } finally {
@@ -77,7 +70,6 @@ export default function Login({ onSuccess }: LoginProps) {
     }
   }
 
-  // Formulario de cambio obligatorio de contraseña
   if (debeCambiar) {
     return (
       <div className="login-page">
@@ -132,7 +124,6 @@ export default function Login({ onSuccess }: LoginProps) {
         </div>
         <h1 className="login-title">CRM ChatBot</h1>
         <p className="login-subtitle">Inicio de Sesión</p>
-
         <form onSubmit={handleSubmitLogin} className="login-form">
           {error && <div className="login-error">{error}</div>}
           <input
@@ -154,7 +145,7 @@ export default function Login({ onSuccess }: LoginProps) {
             disabled={loading}
           />
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? 'Entrando...' : '→  Ingresar'}
+            {loading ? 'Entrando...' : 'Ingresar'}
           </button>
         </form>
       </div>

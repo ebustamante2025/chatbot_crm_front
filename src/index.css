@@ -20,6 +20,15 @@
   --crm-border: #334155;
 }
 
+:root[data-theme='light'] {
+  --crm-bg: #eef4fb;
+  --crm-surface: #ffffff;
+  --crm-surface-hover: #e9f1fb;
+  --crm-text: #0f172a;
+  --crm-text-muted: #475569;
+  --crm-border: #c8d8ee;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -34,6 +43,7 @@ body {
   height: 100vh;
   overflow: hidden;
   line-height: 1.5;
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 #root {
