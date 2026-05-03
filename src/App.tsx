@@ -236,8 +236,9 @@ function App() {
           nuevos[idxTemp] = mensaje
           return { ...prev, mensajes: nuevos }
         }
-        // Si el mensaje ya existe por id (evitar duplicados), ignorar
-        if (mensajesActuales.some((m) => m.id_mensaje === mensaje.id_mensaje)) {
+        // Si el mensaje ya existe por id (evitar duplicados; id puede venir string o number del socket/BD)
+        const idNuevo = Number(mensaje.id_mensaje)
+        if (Number.isFinite(idNuevo) && mensajesActuales.some((m) => Number(m.id_mensaje) === idNuevo)) {
           return prev
         }
         return { ...prev, mensajes: [...mensajesActuales, mensaje] }
@@ -725,6 +726,7 @@ function App() {
             setUsuarioAgente(getStoredUser())
             setAutenticado(true)
           }}
+          theme={crmTheme}
         />
       </>
     )
@@ -778,7 +780,11 @@ function App() {
         {rolActivo === 'admin_faq' ? (
           <AdminPreguntasFrecuentes />
         ) : rolActivo === 'administrador' ? (
-          <AdminPortal socket={socket} vistasPermitidas={usuarioAgente?.vistas_permitidas ?? undefined} />
+          <AdminPortal
+            socket={socket}
+            vistasPermitidas={usuarioAgente?.vistas_permitidas ?? undefined}
+            rolUsuario={usuarioAgente?.rol ?? null}
+          />
         ) : rolActivo === 'historial' ? (
           <HistorialConversaciones />
         ) : rolActivo === 'seguimiento_bot' ? (
@@ -903,7 +909,7 @@ function App() {
                               handleCerrar()
                             }}
                           >
-                            Cerrar conversación
+                            Finalizar conversación
                           </button>
                           <button
                             className="crm-chat-menu-item crm-chat-menu-item--transfer"
@@ -934,9 +940,13 @@ function App() {
                 {(conversacionSeleccionada.mensajes || []).map((m) => {
                   const idNum = idMensajeNumerico((m as { id_mensaje?: number | string }).id_mensaje)
                   const tipo = String((m as { tipo_emisor?: string }).tipo_emisor || '').toUpperCase()
+                  const esPresentacionAutomatica =
+                    tipo === 'AGENTE' &&
+                    String((m as { contenido?: string }).contenido || '').startsWith('Hola, soy ')
                   const esAgenteConMenu =
                     tipo === 'AGENTE' &&
                     idNum != null &&
+                    !esPresentacionAutomatica &&
                     Number((m as { usuario_id?: number }).usuario_id) === Number(usuarioAgente?.id_usuario)
                   const esConMenu = esAgenteConMenu
                   return (
@@ -962,7 +972,7 @@ function App() {
                         aria-label={esConMenu ? 'Opciones del mensaje' : undefined}
                         title={esConMenu ? 'Clic para editar o eliminar' : undefined}
                       >
-                        <span className="crm-mensaje-contenido">{m.contenido}</span>
+                        <span className="crm-mensaje-contenido">{String(m.contenido ?? '').startsWith('[solo-asesor]\n') ? String(m.contenido).replace('[solo-asesor]\n', '') : m.contenido}</span>
                         <span className="crm-mensaje-meta">
                           {esConMenu && <span className="crm-mensaje-flecha" aria-hidden>▼</span>}
                           <span className="crm-mensaje-hora">{formatearFecha(m.creado_en)}</span>
@@ -1098,7 +1108,7 @@ function App() {
       {modalCerrarCaso && (
         <div className="crm-modal-overlay" onClick={() => !cerrandoCaso && setModalCerrarCaso(false)}>
           <div className="crm-modal crm-modal-cerrar-caso" onClick={(e) => e.stopPropagation()}>
-            <h3>Cerrar caso</h3>
+            <h3>Finalizar conversación</h3>
             <p className="crm-modal-subtitulo">
               {conversacionSeleccionada
                 ? `Conversación #${conversacionSeleccionada.id_conversacion} — ${conversacionSeleccionada.contacto_nombre || 'Sin contacto'}`
@@ -1177,7 +1187,7 @@ function App() {
                 <option value="">Seleccione un agente...</option>
                 {usuariosDisponibles.map((u) => (
                   <option key={u.id_usuario} value={u.id_usuario}>
-                    {u.nombre_completo || u.username} — {u.rol}
+                    {nombreCorto(u.nombre_completo, u.username)} — {u.rol}
                   </option>
                 ))}
               </select>

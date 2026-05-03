@@ -22,9 +22,10 @@
   --crm-text-muted: #94a3b8;
   --crm-border: #334155;
 
-  --crm-header-bg: #1e293b;
+  /* Barra superior alineada al panel (slate), no azul corporativo */
+  --crm-header-bg: var(--crm-surface);
   --crm-header-text: #f1f5f9;
-  --crm-header-border: #334155;
+  --crm-header-border: var(--crm-border);
   --crm-header-tab: #94a3b8;
   --crm-header-tab-hover-bg: rgba(255, 255, 255, 0.06);
   --crm-header-user-text: #94a3b8;
@@ -49,10 +50,10 @@
   --crm-estado-active: #34d399;
   --crm-estado-cerrada: #c4b5fd;
 
-  --crm-header-logout-bg: rgba(255, 255, 255, 0.1);
+  --crm-header-logout-bg: rgba(255, 255, 255, 0.08);
   --crm-header-logout-text: #f1f5f9;
-  --crm-header-logout-border: transparent;
-  --crm-header-logout-hover: rgba(255, 255, 255, 0.18);
+  --crm-header-logout-border: var(--crm-border);
+  --crm-header-logout-hover: var(--crm-surface-hover);
 }
 
 [data-theme='light'] {
@@ -63,9 +64,9 @@
   --crm-text-muted: #64748b;
   --crm-border: #cbd5e1;
 
-  --crm-header-bg: #0f172a;
+  --crm-header-bg: #001689;
   --crm-header-text: #f8fafc;
-  --crm-header-border: #1e293b;
+  --crm-header-border: rgba(255, 255, 255, 0.14);
   --crm-header-tab: rgba(248, 250, 252, 0.78);
   --crm-header-tab-hover-bg: rgba(255, 255, 255, 0.12);
   --crm-header-user-text: #cbd5e1;

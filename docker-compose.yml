@@ -2,6 +2,16 @@ version: '3.8'
 
 # CRM Frontend (panel de agentes) - Requiere que api-backend esté corriendo
 # Se conecta a la red crm-chatbot-network (creada por chatbot_api_backend)
+#
+# Docker: copie .env.example → .env y ejecute:
+#   docker compose up -d --build
+#
+# Localhost (Vite): copie .env.development.example → .env.development y:
+#   npm run dev
+#
+# Plantillas: .env.example | .env.development.example
+# Proxy hacia el API en el PC: en .env ponga HOST_API_PORT igual que PORT en chatbot_api_backend/.env
+# (o defina API_UPSTREAM completo, p. ej. api-backend:3001 con el compose de la raíz).
 
 services:
   crm-frontend:
@@ -11,9 +21,12 @@ services:
     image: crm-frontend:latest
     container_name: crm-frontend
     ports:
-      - "3007:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - "${CRM_FRONT_PORT:-3007}:80"
+    environment:
+      HOST_API_PORT: ${HOST_API_PORT:-3004}
+      API_UPSTREAM: ${API_UPSTREAM:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - crm-chatbot-network
     restart: unless-stopped

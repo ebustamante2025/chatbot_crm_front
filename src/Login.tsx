@@ -4,9 +4,11 @@ import './Login.css'
 
 interface LoginProps {
   onSuccess: () => void
+  theme?: string
 }
 
-export default function Login({ onSuccess }: LoginProps) {
+export default function Login({ onSuccess, theme }: LoginProps) {
+  const logoSrc = theme === 'dark' ? '/logo-hgi-dark.png' : '/logo-hgi.png'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -83,7 +85,7 @@ export default function Login({ onSuccess }: LoginProps) {
       <div className="login-page">
         <div className="login-card">
           <div className="login-logo-wrap">
-            <img src="/logo-hgi.png" alt="HGI" className="login-logo" />
+            <img src={logoSrc} alt="HGI" className="login-logo" />
           </div>
           <h1 className="login-title">CRM ChatBot</h1>
           <p className="login-subtitle">Cambio de contraseña obligatorio</p>
@@ -128,7 +130,7 @@ export default function Login({ onSuccess }: LoginProps) {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo-wrap">
-          <img src="/logo-hgi.png" alt="HGI" className="login-logo" />
+          <img src={logoSrc} alt="HGI" className="login-logo" />
         </div>
         <h1 className="login-title">CRM ChatBot</h1>
         <p className="login-subtitle">Inicio de Sesión</p>

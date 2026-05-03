@@ -9,11 +9,15 @@ import {
   register,
   listarEmpresas,
   actualizarEmpresa,
+  obtenerPoliticaWidgetInactividad,
+  guardarPoliticaWidgetInactividad,
   obtenerDashboardStats,
   obtenerActividadReciente,
   obtenerConversacionesActivas,
   obtenerConversacionesBot,
   obtenerHistorialTransferencias,
+  obtenerMenusWidAdmin,
+  actualizarMenuWid,
 } from './services/api'
 import type {
   UsuarioSoporte,
@@ -23,12 +27,73 @@ import type {
   ConversacionActiva,
   ConversacionBot,
   Transferencia,
+  MenuWid,
 } from './services/api'
 import './AdminPortal.css'
 
-type SeccionAdmin = 'dashboard' | 'dashboard-bot' | 'transferencias' | 'usuarios' | 'empresas'
+type SeccionAdmin =
+  | 'dashboard'
+  | 'dashboard-bot'
+  | 'transferencias'
+  | 'usuarios'
+  | 'empresas'
+  | 'widget_inactividad'
+  | 'menus_widget'
 
 /** Primer nombre + primer apellido. Ej: "Eduardo Antonio Bustamante García" → "Eduardo Bustamante" */
+const OPCIONES_FILAS = [5, 10, 20, 50, 100]
+const POR_PAGINA_DEFAULT = 10
+
+function Paginacion({
+  pagina, total, filasPorPagina, totalRegistros, onChange, onCambiarFilas,
+}: {
+  pagina: number
+  total: number
+  filasPorPagina: number
+  totalRegistros: number
+  onChange: (p: number) => void
+  onCambiarFilas: (n: number) => void
+}) {
+  const rango: (number | '...')[] = []
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= pagina - 1 && i <= pagina + 1)) {
+      rango.push(i)
+    } else if (rango[rango.length - 1] !== '...') {
+      rango.push('...')
+    }
+  }
+  return (
+    <div className="crm-paginacion-footer">
+      <div className="crm-paginacion-left">
+        <span className="crm-paginacion-info">{totalRegistros} registro{totalRegistros !== 1 ? 's' : ''}</span>
+        <label className="crm-paginacion-filas-label">
+          Filas:
+          <select
+            className="crm-paginacion-filas-select"
+            value={filasPorPagina}
+            onChange={(e) => onCambiarFilas(Number(e.target.value))}
+          >
+            {OPCIONES_FILAS.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {total > 1 && (
+        <div className="crm-paginacion">
+          <button className="crm-paginacion-btn" onClick={() => onChange(pagina - 1)} disabled={pagina === 1}>‹</button>
+          {rango.map((item, idx) =>
+            item === '...'
+              ? <span key={`ellipsis-${idx}`} className="crm-paginacion-ellipsis">…</span>
+              : <button key={item} className={`crm-paginacion-btn${pagina === item ? ' crm-paginacion-btn--activa' : ''}`} onClick={() => onChange(item)}>{item}</button>
+          )}
+          <button className="crm-paginacion-btn" onClick={() => onChange(pagina + 1)} disabled={pagina === total}>›</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function nombreCorto(nombreCompleto?: string | null | undefined, fallback?: string | null): string {
   if (!nombreCompleto?.trim()) return fallback || '—'
   const partes = nombreCompleto.trim().split(/\s+/)
@@ -38,7 +103,6 @@ function nombreCorto(nombreCompleto?: string | null | undefined, fallback?: stri
 }
 
 const ROLES_DISPONIBLES = ['ADMIN', 'ASESOR', 'SUPERVISOR', 'VENTAS', 'AGENTE']
-const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'TI', 'PP']
 
 /** Opciones para parametrizar vistas por usuario. Si está vacío, se usa el comportamiento por rol. */
 export const OPCIONES_VISTAS: { id: string; label: string; grupo: 'tab' | 'admin' }[] = [
@@ -52,6 +116,8 @@ export const OPCIONES_VISTAS: { id: string; label: string; grupo: 'tab' | 'admin
   { id: 'transferencias', label: 'Panel Admin — Transferencias', grupo: 'admin' },
   { id: 'usuarios', label: 'Panel Admin — Usuarios', grupo: 'admin' },
   { id: 'empresas', label: 'Panel Admin — Empresas', grupo: 'admin' },
+  { id: 'widget_inactividad', label: 'Panel Admin — Widget inactividad', grupo: 'admin' },
+  { id: 'menus_widget', label: 'Panel Admin — Menús Widget', grupo: 'admin' },
 ]
 
 // =============================
@@ -80,7 +146,9 @@ function DashboardSection() {
   const [actividad, setActividad] = useState<ActividadReciente[]>([])
   const [activas, setActivas] = useState<ConversacionActiva[]>([])
   const [cargando, setCargando] = useState(true)
-  const [tick, setTick] = useState(0) // para actualizar el contador cada segundo
+  const [tick, setTick] = useState(0)
+  const [paginaConv, setPaginaConv] = useState(1)
+  const [filasConv, setFilasConv] = useState(POR_PAGINA_DEFAULT)
 
   useEffect(() => {
     const cargar = async () => {
@@ -190,73 +258,84 @@ function DashboardSection() {
         <h4>Conversaciones</h4>
         {activas.length === 0 && actividad.length === 0 ? (
           <p className="crm-admin-empty">No hay conversaciones registradas</p>
-        ) : (
-          <div className="crm-admin-table-wrap">
-            <table className="crm-admin-table">
-              <thead>
-                <tr>
-                  <th>Contacto</th>
-                  <th>Empresa</th>
-                  <th>Agente</th>
-                  <th>Estado</th>
-                  <th>Fecha</th>
-                  <th>Tiempo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activas.map((c) => {
-                  const segs = c.segundos_asignada + tick
-                  return (
-                    <tr key={`activa-${c.id_conversacion}`}>
-                      <td className="crm-admin-cell-bold">{c.contacto_nombre || 'Sin nombre'}</td>
-                      <td>{c.nombre_empresa || '—'}</td>
-                      <td>{nombreCorto(c.agente_nombre_completo, c.agente_username)}</td>
-                      <td>
-                        <span className={`crm-admin-badge crm-admin-badge--${c.estado === 'ACTIVA' ? 'active' : 'assigned'}`}>
-                          {c.estado === 'ACTIVA' ? 'Activa' : 'Asignada'}
-                        </span>
-                      </td>
-                      <td className="crm-admin-cell-fecha">
-                        {new Date(c.asignada_en).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td>
-                        <span className={`crm-admin-timer crm-admin-timer--${colorTiempo(segs)}`}>
-                          {formatTiempo(segs)}
-                        </span>
-                      </td>
+        ) : (() => {
+          const actividadFiltrada = actividad.filter((a) => !activas.some((ac) => ac.id_conversacion === a.id_conversacion))
+          const totalFilas = activas.length + actividadFiltrada.length
+          const totalPags = Math.ceil(totalFilas / filasConv)
+          const inicio = (paginaConv - 1) * filasConv
+          const fin = inicio + filasConv
+          const activasMostrar = activas.slice(Math.max(0, inicio), Math.min(activas.length, fin))
+          const offsetAct = Math.max(0, inicio - activas.length)
+          const actividadMostrar = actividadFiltrada.slice(offsetAct, offsetAct + Math.max(0, fin - Math.max(inicio, activas.length)))
+          return (
+            <>
+              <div className="crm-admin-table-wrap">
+                <table className="crm-admin-table">
+                  <thead>
+                    <tr>
+                      <th>Contacto</th>
+                      <th>Empresa</th>
+                      <th>Agente</th>
+                      <th>Estado</th>
+                      <th>Fecha</th>
+                      <th>Tiempo</th>
                     </tr>
-                  )
-                })}
-                {actividad
-                  .filter((a) => !activas.some((ac) => ac.id_conversacion === a.id_conversacion))
-                  .map((a) => (
-                    <tr key={`reciente-${a.id_conversacion}`} className={a.estado === 'CERRADA' ? 'crm-admin-row--inactive' : ''}>
-                      <td className="crm-admin-cell-bold">{a.contacto_nombre || 'Sin nombre'}</td>
-                      <td>{a.nombre_empresa || '—'}</td>
-                      <td>{nombreCorto(a.agente_nombre_completo, a.agente_username)}</td>
-                      <td>
-                        <span className={`crm-admin-badge crm-admin-badge--${a.estado === 'EN_COLA' ? 'queue' : a.estado === 'ASIGNADA' ? 'assigned' : a.estado === 'ACTIVA' ? 'active' : 'closed'}`}>
-                          {a.estado === 'EN_COLA' ? 'En cola' : a.estado === 'ASIGNADA' ? 'Asignada' : a.estado === 'ACTIVA' ? 'Activa' : 'Cerrada'}
-                        </span>
-                      </td>
-                      <td className="crm-admin-cell-fecha">
-                        {new Date(a.creada_en).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td>
-                        {a.estado === 'CERRADA' && a.segundos_duracion != null ? (
-                          <span className="crm-admin-timer crm-admin-timer--closed" title="Duración total de la conversación">
-                            {formatTiempo(a.segundos_duracion)}
+                  </thead>
+                  <tbody>
+                    {activasMostrar.map((c) => {
+                      const segs = c.segundos_asignada + tick
+                      return (
+                        <tr key={`activa-${c.id_conversacion}`}>
+                          <td className="crm-admin-cell-bold">{c.contacto_nombre || 'Sin nombre'}</td>
+                          <td>{c.nombre_empresa || '—'}</td>
+                          <td>{nombreCorto(c.agente_nombre_completo, c.agente_username)}</td>
+                          <td>
+                            <span className={`crm-admin-badge crm-admin-badge--${c.estado === 'ACTIVA' ? 'active' : 'assigned'}`}>
+                              {c.estado === 'ACTIVA' ? 'Activa' : 'Asignada'}
+                            </span>
+                          </td>
+                          <td className="crm-admin-cell-fecha">
+                            {new Date(c.asignada_en).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td>
+                            <span className={`crm-admin-timer crm-admin-timer--${colorTiempo(segs)}`}>
+                              {formatTiempo(segs)}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {actividadMostrar.map((a) => (
+                      <tr key={`reciente-${a.id_conversacion}`} className={a.estado === 'CERRADA' ? 'crm-admin-row--inactive' : ''}>
+                        <td className="crm-admin-cell-bold">{a.contacto_nombre || 'Sin nombre'}</td>
+                        <td>{a.nombre_empresa || '—'}</td>
+                        <td>{nombreCorto(a.agente_nombre_completo, a.agente_username)}</td>
+                        <td>
+                          <span className={`crm-admin-badge crm-admin-badge--${a.estado === 'EN_COLA' ? 'queue' : a.estado === 'ASIGNADA' ? 'assigned' : a.estado === 'ACTIVA' ? 'active' : 'closed'}`}>
+                            {a.estado === 'EN_COLA' ? 'En cola' : a.estado === 'ASIGNADA' ? 'Asignada' : a.estado === 'ACTIVA' ? 'Activa' : 'Cerrada'}
                           </span>
-                        ) : (
-                          <span className="crm-admin-cell-muted">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                        </td>
+                        <td className="crm-admin-cell-fecha">
+                          {new Date(a.creada_en).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td>
+                          {a.estado === 'CERRADA' && a.segundos_duracion != null ? (
+                            <span className="crm-admin-timer crm-admin-timer--closed" title="Duración total de la conversación">
+                              {formatTiempo(a.segundos_duracion)}
+                            </span>
+                          ) : (
+                            <span className="crm-admin-cell-muted">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Paginacion pagina={paginaConv} total={totalPags} filasPorPagina={filasConv} totalRegistros={totalFilas} onChange={setPaginaConv} onCambiarFilas={(n) => { setFilasConv(n); setPaginaConv(1) }} />
+            </>
+          )
+        })()}
       </div>
     </div>
   )
@@ -266,9 +345,13 @@ function DashboardSection() {
 // Dashboard Bot (Isa)
 // =============================
 function BotConversacionesTabla({ conversaciones, tick }: { conversaciones: ConversacionBot[]; tick: number }) {
-  const enLinea = conversaciones.filter((c) => c.estado !== 'CERRADA' && (c.segundos_sin_actividad + tick) < 600)
-  const inactivas = conversaciones.filter((c) => c.estado !== 'CERRADA' && (c.segundos_sin_actividad + tick) >= 600)
-  const cerradas = conversaciones.filter((c) => c.estado === 'CERRADA')
+  const [paginaBot, setPaginaBot] = useState(1)
+  const [filasBot, setFilasBot] = useState(POR_PAGINA_DEFAULT)
+  const totalPagsBot = Math.ceil(conversaciones.length / filasBot)
+  const convPag = conversaciones.slice((paginaBot - 1) * filasBot, paginaBot * filasBot)
+  const enLinea = convPag.filter((c) => c.estado !== 'CERRADA' && (c.segundos_sin_actividad + tick) < 600)
+  const inactivas = convPag.filter((c) => c.estado !== 'CERRADA' && (c.segundos_sin_actividad + tick) >= 600)
+  const cerradas = convPag.filter((c) => c.estado === 'CERRADA')
 
   if (conversaciones.length === 0) {
     return <p className="crm-admin-empty">No hay conversaciones con el bot en este periodo</p>
@@ -361,6 +444,7 @@ function BotConversacionesTabla({ conversaciones, tick }: { conversaciones: Conv
           ))}
         </tbody>
       </table>
+      <Paginacion pagina={paginaBot} total={totalPagsBot} filasPorPagina={filasBot} totalRegistros={conversaciones.length} onChange={setPaginaBot} onCambiarFilas={(n) => { setFilasBot(n); setPaginaBot(1) }} />
     </div>
   )
 }
@@ -479,11 +563,13 @@ function UsuariosSection() {
   const [error, setError] = useState<string | null>(null)
   /** Errores de validación/API solo del modal Nuevo Usuario (se muestran dentro del modal, no detrás del overlay). */
   const [errorNuevoModal, setErrorNuevoModal] = useState<string | null>(null)
+  const [paginaUsuarios, setPaginaUsuarios] = useState(1)
+  const [filasUsuarios, setFilasUsuarios] = useState(POR_PAGINA_DEFAULT)
 
   // Form state para editar
-  const [formEdit, setFormEdit] = useState({ username: '', nombre_completo: '', rol: '', nivel: 1, estado: true, tipo_documento: '', documento: '', vistas_permitidas: [] as string[] })
+  const [formEdit, setFormEdit] = useState({ username: '', nombre_completo: '', rol: '', estado: true, vistas_permitidas: [] as string[] })
   // Form state para nuevo
-  const [formNuevo, setFormNuevo] = useState({ username: '', nombre_completo: '', password: '', rol: 'ASESOR', tipo_documento: '', documento: '' })
+  const [formNuevo, setFormNuevo] = useState({ username: '', nombre_completo: '', password: '', rol: 'ASESOR' })
   // Form state para password
   const [formPassword, setFormPassword] = useState('')
 
@@ -506,10 +592,7 @@ function UsuariosSection() {
       username: u.username,
       nombre_completo: u.nombre_completo || '',
       rol: u.rol,
-      nivel: u.nivel,
       estado: u.estado,
-      tipo_documento: u.tipo_documento || '',
-      documento: u.documento || '',
       vistas_permitidas: Array.isArray(u.vistas_permitidas) ? [...u.vistas_permitidas] : [],
     })
     setModalUsuario(u)
@@ -551,12 +634,10 @@ function UsuariosSection() {
         password: formNuevo.password,
         rol: formNuevo.rol,
         nombre_completo: formNuevo.nombre_completo.trim() || undefined,
-        tipo_documento: formNuevo.tipo_documento || undefined,
-        documento: formNuevo.documento || undefined,
       })
       setErrorNuevoModal(null)
       setModalNuevo(false)
-      setFormNuevo({ username: '', nombre_completo: '', password: '', rol: 'ASESOR', tipo_documento: '', documento: '' })
+      setFormNuevo({ username: '', nombre_completo: '', password: '', rol: 'ASESOR' })
       cargar()
     } catch (e) {
       setErrorNuevoModal(e instanceof Error ? e.message : 'Error al crear usuario')
@@ -637,7 +718,10 @@ function UsuariosSection() {
         <p className="crm-admin-loading">Cargando usuarios...</p>
       ) : usuarios.length === 0 ? (
         <p className="crm-admin-empty">No hay usuarios registrados</p>
-      ) : (
+      ) : (() => {
+        const totalPagsUsr = Math.ceil(usuarios.length / filasUsuarios)
+        const usuariosPag = usuarios.slice((paginaUsuarios - 1) * filasUsuarios, paginaUsuarios * filasUsuarios)
+        return (
         <div className="crm-admin-table-wrap">
           <table className="crm-admin-table">
             <thead>
@@ -646,14 +730,12 @@ function UsuariosSection() {
                 <th>Username</th>
                 <th>Nombre Completo</th>
                 <th>Rol</th>
-                <th>Nivel</th>
                 <th>Estado</th>
-                <th>Documento</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {usuarios.map((u) => (
+              {usuariosPag.map((u) => (
                 <tr key={u.id_usuario} className={!u.estado ? 'crm-admin-row--inactive' : ''}>
                   <td>{u.id_usuario}</td>
                   <td className="crm-admin-cell-bold">{u.username}</td>
@@ -661,13 +743,11 @@ function UsuariosSection() {
                   <td>
                     <span className={`crm-admin-badge crm-admin-badge--role-${u.rol.toLowerCase()}`}>{u.rol}</span>
                   </td>
-                  <td>{u.nivel}</td>
                   <td>
                     <span className={`crm-admin-badge ${u.estado ? 'crm-admin-badge--active' : 'crm-admin-badge--inactive'}`}>
                       {u.estado ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
-                  <td>{u.tipo_documento && u.documento ? `${u.tipo_documento} ${u.documento}` : '—'}</td>
                   <td>
                     <div className="crm-admin-cell-actions">
                       <button className="crm-admin-btn-icon" onClick={() => abrirEditar(u)} title="Editar">✏️</button>
@@ -686,13 +766,15 @@ function UsuariosSection() {
               ))}
             </tbody>
           </table>
+          <Paginacion pagina={paginaUsuarios} total={totalPagsUsr} filasPorPagina={filasUsuarios} totalRegistros={usuarios.length} onChange={setPaginaUsuarios} onCambiarFilas={(n) => { setFilasUsuarios(n); setPaginaUsuarios(1) }} />
         </div>
-      )}
+        )
+      })()}
 
       {/* Modal Editar Usuario */}
       {modalUsuario && (
-        <div className="crm-admin-modal-overlay" onClick={() => setModalUsuario(null)}>
-          <div className="crm-admin-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="crm-admin-modal-overlay" onMouseDown={() => setModalUsuario(null)}>
+          <div className="crm-admin-modal" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
             <div className="crm-admin-modal-header">
               <h3>Editar Usuario</h3>
               <button className="crm-admin-modal-close" onClick={() => setModalUsuario(null)}>✕</button>
@@ -712,31 +794,12 @@ function UsuariosSection() {
                   {ROLES_DISPONIBLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-              <div className="crm-admin-field-row">
-                <div className="crm-admin-field">
-                  <label>Nivel</label>
-                  <input type="number" min={1} max={10} value={formEdit.nivel} onChange={(e) => setFormEdit({ ...formEdit, nivel: parseInt(e.target.value) || 1 })} />
-                </div>
-                <div className="crm-admin-field">
-                  <label>Estado</label>
-                  <select value={String(formEdit.estado)} onChange={(e) => setFormEdit({ ...formEdit, estado: e.target.value === 'true' })}>
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                  </select>
-                </div>
-              </div>
-              <div className="crm-admin-field-row">
-                <div className="crm-admin-field">
-                  <label>Tipo documento</label>
-                  <select value={formEdit.tipo_documento} onChange={(e) => setFormEdit({ ...formEdit, tipo_documento: e.target.value })}>
-                    <option value="">—</option>
-                    {TIPOS_DOCUMENTO.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="crm-admin-field">
-                  <label>Documento</label>
-                  <input value={formEdit.documento} onChange={(e) => setFormEdit({ ...formEdit, documento: e.target.value })} />
-                </div>
+              <div className="crm-admin-field">
+                <label>Estado</label>
+                <select value={String(formEdit.estado)} onChange={(e) => setFormEdit({ ...formEdit, estado: e.target.value === 'true' })}>
+                  <option value="true">Activo</option>
+                  <option value="false">Inactivo</option>
+                </select>
               </div>
               <div className="crm-admin-field">
                 <label>Vistas permitidas (opcional)</label>
@@ -772,12 +835,12 @@ function UsuariosSection() {
       {modalNuevo && (
         <div
           className="crm-admin-modal-overlay"
-          onClick={() => {
+          onMouseDown={() => {
             setErrorNuevoModal(null)
             setModalNuevo(false)
           }}
         >
-          <div className="crm-admin-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="crm-admin-modal" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
             <div className="crm-admin-modal-header">
               <h3>Nuevo Usuario</h3>
               <button
@@ -849,19 +912,6 @@ function UsuariosSection() {
                   {ROLES_DISPONIBLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-              <div className="crm-admin-field-row">
-                <div className="crm-admin-field">
-                  <label>Tipo documento</label>
-                  <select value={formNuevo.tipo_documento} onChange={(e) => setFormNuevo({ ...formNuevo, tipo_documento: e.target.value })}>
-                    <option value="">—</option>
-                    {TIPOS_DOCUMENTO.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="crm-admin-field">
-                  <label>Documento</label>
-                  <input value={formNuevo.documento} onChange={(e) => setFormNuevo({ ...formNuevo, documento: e.target.value })} />
-                </div>
-              </div>
               <div className="crm-admin-modal-footer">
                 <button
                   className="crm-btn crm-btn--secondary"
@@ -883,8 +933,8 @@ function UsuariosSection() {
 
       {/* Modal Asignar Contraseña Temporal */}
       {modalPassword && (
-        <div className="crm-admin-modal-overlay" onClick={() => setModalPassword(null)}>
-          <div className="crm-admin-modal crm-admin-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div className="crm-admin-modal-overlay" onMouseDown={() => setModalPassword(null)}>
+          <div className="crm-admin-modal crm-admin-modal--sm" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
             <div className="crm-admin-modal-header">
               <h3>Contraseña temporal para {modalPassword.username}</h3>
               <button className="crm-admin-modal-close" onClick={() => setModalPassword(null)}>✕</button>
@@ -910,6 +960,179 @@ function UsuariosSection() {
 }
 
 // =============================
+// Widget — inactividad del contacto (solo rol ADMIN en API)
+// =============================
+function WidgetInactividadSection() {
+  const [cargandoPolitica, setCargandoPolitica] = useState(true)
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [okMsg, setOkMsg] = useState<string | null>(null)
+  const [form, setForm] = useState({
+    inactividad_total_minutos: 15,
+    numero_avisos_inactividad: 2,
+    mensaje_aviso_1: '',
+    mensaje_aviso_2: '',
+    mensaje_cierre: '',
+    activo: true,
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setCargandoPolitica(true)
+      setError(null)
+      setOkMsg(null)
+      try {
+        const { politica } = await obtenerPoliticaWidgetInactividad()
+        if (cancelled) return
+        setForm({
+          inactividad_total_minutos: politica.inactividad_total_minutos,
+          numero_avisos_inactividad:
+            typeof politica.numero_avisos_inactividad === 'number' ? politica.numero_avisos_inactividad : 2,
+          mensaje_aviso_1: politica.mensaje_aviso_1,
+          mensaje_aviso_2: politica.mensaje_aviso_2,
+          mensaje_cierre: politica.mensaje_cierre,
+          activo: politica.activo,
+        })
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Error al cargar política')
+      } finally {
+        if (!cancelled) setCargandoPolitica(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const guardar = async () => {
+    setGuardando(true)
+    setError(null)
+    setOkMsg(null)
+    try {
+      await guardarPoliticaWidgetInactividad(form)
+      setOkMsg('Cambios guardados correctamente.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al guardar')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="crm-admin-section">
+      {error && (
+        <div className="crm-admin-error">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError(null)}>✕</button>
+        </div>
+      )}
+      {okMsg && (
+        <div className="crm-admin-info-box" style={{ marginBottom: '1rem', color: 'var(--crm-text)' }}>
+          {okMsg}
+        </div>
+      )}
+
+      <div className="crm-admin-section-header">
+        <h3>Widget — inactividad del contacto</h3>
+        <p className="crm-admin-pregfrecuen-hint" style={{ marginTop: '0.5rem', maxWidth: '52rem' }}>
+          Regla <strong>única para todas las empresas</strong>: tiempo total en <strong>minutos</strong> sin que el{' '}
+          <strong>contacto</strong> escriba. Indique <strong>cuántos avisos</strong> enviar antes del cierre; el tiempo se
+          reparte en <strong>intervalos iguales</strong> (avisos en los hitos intermedios y cierre al final). Con{' '}
+          <strong>0 avisos</strong>, solo se aplica el cierre al vencer el plazo. Si hay más de dos avisos, el 1.er usa el
+          primer texto y del 2.º en adelante el segundo texto.
+        </p>
+      </div>
+
+      {cargandoPolitica ? (
+        <p className="crm-admin-loading" style={{ marginTop: '1rem' }}>Cargando política...</p>
+      ) : (
+        <>
+            <div className="crm-admin-form-grid" style={{ marginTop: '1.25rem', maxWidth: '40rem' }}>
+              <div className="crm-admin-field">
+                <label htmlFor="widget-inact-min">Minutos totales hasta cierre</label>
+                <input
+                  id="widget-inact-min"
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={form.inactividad_total_minutos}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, inactividad_total_minutos: Math.max(1, Number(e.target.value) || 1) }))
+                  }
+                />
+              </div>
+              <div className="crm-admin-field">
+                <label htmlFor="widget-inact-n-avisos">Avisos antes del cierre</label>
+                <input
+                  id="widget-inact-n-avisos"
+                  type="number"
+                  min={0}
+                  max={30}
+                  value={form.numero_avisos_inactividad}
+                  onChange={(e) => {
+                    const raw = Number(e.target.value)
+                    const n = Number.isFinite(raw) ? Math.floor(raw) : 0
+                    setForm((f) => ({
+                      ...f,
+                      numero_avisos_inactividad: Math.min(30, Math.max(0, n)),
+                    }))
+                  }}
+                />
+                <span className="crm-admin-pregfrecuen-hint" style={{ display: 'block', marginTop: '0.35rem' }}>
+                  Número de recordatorios (no incluye el mensaje de cierre). Entre 0 y 30.
+                </span>
+              </div>
+              <div className="crm-admin-field">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={form.activo}
+                    onChange={(e) => setForm((f) => ({ ...f, activo: e.target.checked }))}
+                  />
+                  {' '}Política activa
+                </label>
+              </div>
+              <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="widget-inact-m1">Mensaje — 1.er aviso</label>
+                <textarea
+                  id="widget-inact-m1"
+                  rows={3}
+                  value={form.mensaje_aviso_1}
+                  onChange={(e) => setForm((f) => ({ ...f, mensaje_aviso_1: e.target.value }))}
+                />
+              </div>
+              <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="widget-inact-m2">Mensaje — 2.o aviso (y siguientes si hay más de dos avisos)</label>
+                <textarea
+                  id="widget-inact-m2"
+                  rows={3}
+                  value={form.mensaje_aviso_2}
+                  onChange={(e) => setForm((f) => ({ ...f, mensaje_aviso_2: e.target.value }))}
+                />
+              </div>
+              <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="widget-inact-m3">Mensaje — cierre por inactividad</label>
+                <textarea
+                  id="widget-inact-m3"
+                  rows={3}
+                  value={form.mensaje_cierre}
+                  onChange={(e) => setForm((f) => ({ ...f, mensaje_cierre: e.target.value }))}
+                />
+              </div>
+              <div style={{ marginTop: '0.5rem' }}>
+                <button type="button" className="crm-btn crm-btn--primary" onClick={guardar} disabled={guardando}>
+                  {guardando ? 'Guardando…' : 'Guardar cambios'}
+                </button>
+              </div>
+            </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// =============================
 // Gestión de Empresas
 // =============================
 function EmpresasSection() {
@@ -918,6 +1141,9 @@ function EmpresasSection() {
   const [modalEmpresa, setModalEmpresa] = useState<Empresa | null>(null)
   const [formEdit, setFormEdit] = useState({ nombre_empresa: '', estado: true })
   const [error, setError] = useState<string | null>(null)
+  const [paginaEmpresas, setPaginaEmpresas] = useState(1)
+  const [filasEmpresas, setFilasEmpresas] = useState(POR_PAGINA_DEFAULT)
+
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -966,7 +1192,10 @@ function EmpresasSection() {
         <p className="crm-admin-loading">Cargando empresas...</p>
       ) : empresas.length === 0 ? (
         <p className="crm-admin-empty">No hay empresas registradas</p>
-      ) : (
+      ) : (() => {
+        const totalPagsEmp = Math.ceil(empresas.length / filasEmpresas)
+        const empresasPag = empresas.slice((paginaEmpresas - 1) * filasEmpresas, paginaEmpresas * filasEmpresas)
+        return (
         <div className="crm-admin-table-wrap">
           <table className="crm-admin-table">
             <thead>
@@ -980,7 +1209,7 @@ function EmpresasSection() {
               </tr>
             </thead>
             <tbody>
-              {empresas.map((emp) => (
+              {empresasPag.map((emp) => (
                 <tr key={emp.id_empresa} className={!emp.estado ? 'crm-admin-row--inactive' : ''}>
                   <td>{emp.id_empresa}</td>
                   <td className="crm-admin-cell-bold">{emp.nit}</td>
@@ -992,19 +1221,21 @@ function EmpresasSection() {
                   </td>
                   <td>{new Date(emp.creado_en).toLocaleDateString('es-CO')}</td>
                   <td>
-                    <button className="crm-admin-btn-icon" onClick={() => abrirEditar(emp)} title="Editar">✏️</button>
+                    <button className="crm-admin-btn-icon" onClick={() => abrirEditar(emp)} title="Editar empresa">✏️</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <Paginacion pagina={paginaEmpresas} total={totalPagsEmp} filasPorPagina={filasEmpresas} totalRegistros={empresas.length} onChange={setPaginaEmpresas} onCambiarFilas={(n) => { setFilasEmpresas(n); setPaginaEmpresas(1) }} />
         </div>
-      )}
+        )
+      })()}
 
       {/* Modal Editar Empresa */}
       {modalEmpresa && (
-        <div className="crm-admin-modal-overlay" onClick={() => setModalEmpresa(null)}>
-          <div className="crm-admin-modal crm-admin-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div className="crm-admin-modal-overlay" onMouseDown={() => setModalEmpresa(null)}>
+          <div className="crm-admin-modal crm-admin-modal--sm" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
             <div className="crm-admin-modal-header">
               <h3>Editar Empresa</h3>
               <button className="crm-admin-modal-close" onClick={() => setModalEmpresa(null)}>✕</button>
@@ -1033,6 +1264,7 @@ function EmpresasSection() {
           </div>
         </div>
       )}
+
     </div>
   )
 }
@@ -1045,6 +1277,8 @@ function TransferenciasSection() {
   const [transferencias, setTransferencias] = useState<Transferencia[]>([])
   const [total, setTotal] = useState(0)
   const [cargando, setCargando] = useState(true)
+  const [paginaTrans, setPaginaTrans] = useState(1)
+  const [filasTrans, setFilasTrans] = useState(POR_PAGINA_DEFAULT)
 
   const cargar = useCallback(async () => {
     try {
@@ -1127,7 +1361,10 @@ function TransferenciasSection() {
         </h4>
         {transferencias.length === 0 ? (
           <p className="crm-admin-empty">No hay transferencias en este periodo</p>
-        ) : (
+        ) : (() => {
+          const totalPagsTrans = Math.ceil(transferencias.length / filasTrans)
+          const transPag = transferencias.slice((paginaTrans - 1) * filasTrans, paginaTrans * filasTrans)
+          return (
           <div className="crm-admin-table-wrap">
             <table className="crm-admin-table">
               <thead>
@@ -1143,7 +1380,7 @@ function TransferenciasSection() {
                 </tr>
               </thead>
               <tbody>
-                {transferencias.map((t) => (
+                {transPag.map((t) => (
                   <tr key={t.id_asignacion}>
                     <td className="crm-admin-cell-bold">#{t.conversacion_id}</td>
                     <td>{t.contacto_nombre || '—'}</td>
@@ -1165,9 +1402,113 @@ function TransferenciasSection() {
                 ))}
               </tbody>
             </table>
+            <Paginacion pagina={paginaTrans} total={totalPagsTrans} filasPorPagina={filasTrans} totalRegistros={total} onChange={setPaginaTrans} onCambiarFilas={(n) => { setFilasTrans(n); setPaginaTrans(1) }} />
           </div>
-        )}
+          )
+        })()}
       </div>
+    </div>
+  )
+}
+
+// =============================
+// Menús del Widget
+// =============================
+function MenusWidgetSection() {
+  const [menus, setMenus] = useState<MenuWid[]>([])
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [guardandoMenu, setGuardandoMenu] = useState<number | null>(null)
+  const [okMsg, setOkMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    obtenerMenusWidAdmin()
+      .then(({ menus: lista }) => setMenus(lista))
+      .catch(() => setError('Error al cargar menús'))
+      .finally(() => setCargando(false))
+  }, [])
+
+  const toggleMenu = async (menu: MenuWid) => {
+    setGuardandoMenu(menu.id)
+    setOkMsg(null)
+    try {
+      const { menu: actualizado } = await actualizarMenuWid(menu.id, { activo: !menu.activo })
+      setMenus((prev) => prev.map((m) => m.id === actualizado.id ? actualizado : m))
+      setOkMsg(`"${actualizado.nombre}" ${actualizado.activo ? 'activado ✓' : 'ocultado'}`)
+    } catch {
+      setError('Error al actualizar menú')
+    } finally {
+      setGuardandoMenu(null)
+    }
+  }
+
+  return (
+    <div className="crm-admin-section">
+      {error && (
+        <div className="crm-admin-error">
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>✕</button>
+        </div>
+      )}
+
+      <div className="crm-admin-section-header">
+        <h3>Menús del Widget</h3>
+      </div>
+
+      <p style={{ fontSize: '0.875rem', color: 'var(--crm-text-muted)', marginBottom: '1rem' }}>
+        Activa o desactiva cada opción del menú. Los cambios aplican para todos los usuarios del widget.
+      </p>
+
+      {okMsg && (
+        <div style={{ marginBottom: '0.75rem', padding: '0.5rem 0.75rem', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(74,222,128,0.35)', borderRadius: '0.4rem', color: '#16a34a', fontSize: '0.85rem' }}>
+          {okMsg}
+        </div>
+      )}
+
+      {cargando ? (
+        <p className="crm-admin-loading">Cargando menús...</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxWidth: '480px' }}>
+          {menus.map((menu) => (
+            <label
+              key={menu.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.8rem 1rem',
+                borderRadius: '0.5rem',
+                background: 'var(--crm-surface-hover)',
+                border: `1px solid ${menu.activo ? 'var(--crm-blue-500)' : 'var(--crm-border)'}`,
+                cursor: guardandoMenu === menu.id ? 'wait' : 'pointer',
+                opacity: guardandoMenu === menu.id ? 0.6 : 1,
+                transition: 'border-color 0.2s',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={menu.activo}
+                disabled={guardandoMenu === menu.id}
+                onChange={() => toggleMenu(menu)}
+                style={{ width: '17px', height: '17px', cursor: 'pointer', accentColor: 'var(--crm-blue-500)' }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{menu.nombre}</div>
+                {menu.descripcion && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--crm-text-muted)' }}>{menu.descripcion}</div>
+                )}
+              </div>
+              <span style={{
+                fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontWeight: 600,
+                background: menu.activo ? 'rgba(59,130,246,0.15)' : 'rgba(100,116,139,0.15)',
+                color: menu.activo ? 'var(--crm-blue-500)' : 'var(--crm-text-muted)',
+              }}>
+                {menu.activo ? 'Visible' : 'Oculto'}
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -1181,13 +1522,28 @@ const SECCIONES_ADMIN: { id: SeccionAdmin; label: string; icon: string }[] = [
   { id: 'transferencias', label: 'Transferencias', icon: '🔄' },
   { id: 'usuarios', label: 'Usuarios', icon: '👥' },
   { id: 'empresas', label: 'Empresas', icon: '🏢' },
+  { id: 'widget_inactividad', label: 'Widget inactividad', icon: '⏱️' },
+  { id: 'menus_widget', label: 'Menús Widget', icon: '☰' },
 ]
 
-export default function AdminPortal({ socket, vistasPermitidas }: { socket: Socket | null; vistasPermitidas?: string[] | null }) {
+export default function AdminPortal({
+  socket,
+  vistasPermitidas,
+  rolUsuario,
+}: {
+  socket: Socket | null
+  vistasPermitidas?: string[] | null
+  rolUsuario?: string | null
+}) {
+  const seccionesDisponibles = SECCIONES_ADMIN.filter(
+    (item) =>
+      (item.id !== 'widget_inactividad' && item.id !== 'menus_widget') || rolUsuario === 'ADMIN'
+  )
   // Si hay vistas parametrizadas, filtrar solo secciones permitidas; si no, mostrar todas
-  const navItems = (Array.isArray(vistasPermitidas) && vistasPermitidas.length > 0)
-    ? SECCIONES_ADMIN.filter((item) => vistasPermitidas.includes(item.id))
-    : SECCIONES_ADMIN
+  const navItems =
+    Array.isArray(vistasPermitidas) && vistasPermitidas.length > 0
+      ? seccionesDisponibles.filter((item) => vistasPermitidas.includes(item.id))
+      : seccionesDisponibles
 
   const seccionPorDefecto = navItems[0]?.id ?? 'dashboard'
   const [seccion, setSeccion] = useState<SeccionAdmin>(navItems.some((n) => n.id === 'dashboard') ? 'dashboard' : seccionPorDefecto)
@@ -1217,6 +1573,8 @@ export default function AdminPortal({ socket, vistasPermitidas }: { socket: Sock
         {seccion === 'transferencias' && <TransferenciasSection />}
         {seccion === 'usuarios' && <UsuariosSection />}
         {seccion === 'empresas' && <EmpresasSection />}
+        {seccion === 'widget_inactividad' && <WidgetInactividadSection />}
+        {seccion === 'menus_widget' && <MenusWidgetSection />}
       </div>
     </div>
   )

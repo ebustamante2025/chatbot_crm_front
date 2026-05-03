@@ -319,7 +319,7 @@ export async function cerrarConversacion(conversacionId: number, datos?: { motiv
     headers: authHeaders(),
     body: datos ? JSON.stringify(datos) : undefined,
   });
-  if (!res.ok) throw new Error('Error al cerrar conversación');
+  if (!res.ok) throw new Error('Error al finalizar conversación');
   return res.json();
 }
 
@@ -439,6 +439,48 @@ export async function actualizarEmpresa(id: number, data: Partial<{ nombre_empre
   const result = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((result as { error?: string }).error || 'Error al actualizar empresa');
   return result;
+}
+
+/** Política global de inactividad del contacto en el widget. Solo ADMIN. */
+export interface WidgetPoliticaInactividad {
+  id: number;
+  inactividad_total_minutos: number;
+  /** Cuántos avisos se envían antes del cierre (0 = solo cierre al vencer el tiempo). Máx. 30. */
+  numero_avisos_inactividad: number;
+  mensaje_aviso_1: string;
+  mensaje_aviso_2: string;
+  mensaje_cierre: string;
+  activo: boolean;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export async function obtenerPoliticaWidgetInactividad(): Promise<{ politica: WidgetPoliticaInactividad }> {
+  const res = await fetch(`${API_BASE}/admin/widget-politicas-inactividad`, { headers: authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string; error?: string }).message || (data as { error?: string }).error || 'Error al cargar política');
+  return data as { politica: WidgetPoliticaInactividad };
+}
+
+export async function guardarPoliticaWidgetInactividad(
+  body: Pick<
+    WidgetPoliticaInactividad,
+    | 'inactividad_total_minutos'
+    | 'numero_avisos_inactividad'
+    | 'mensaje_aviso_1'
+    | 'mensaje_aviso_2'
+    | 'mensaje_cierre'
+    | 'activo'
+  >
+): Promise<{ politica: WidgetPoliticaInactividad; message?: string }> {
+  const res = await fetch(`${API_BASE}/admin/widget-politicas-inactividad`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string; error?: string }).message || (data as { error?: string }).error || 'Error al guardar política');
+  return data as { politica: WidgetPoliticaInactividad; message?: string };
 }
 
 // =============================================
@@ -689,4 +731,34 @@ export async function eliminarPregunta(id: number): Promise<void> {
     const result = await res.json().catch(() => ({}));
     throw new Error((result as { message?: string }).message || 'Error al eliminar pregunta');
   }
+}
+
+// ─── Menús del widget (menus_wid) ────────────────────────────────────────────
+
+export interface MenuWid {
+  id: number;
+  clave: string;
+  nombre: string;
+  descripcion?: string;
+  activo: boolean;
+  orden: number;
+}
+
+export async function obtenerMenusWidAdmin(): Promise<{ menus: MenuWid[] }> {
+  const res = await fetch(`${API_BASE}/menus-wid`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Error al obtener menús del widget');
+  return res.json();
+}
+
+export async function actualizarMenuWid(id: number, data: Partial<Pick<MenuWid, 'activo' | 'nombre' | 'descripcion' | 'orden'>>): Promise<{ menu: MenuWid }> {
+  const res = await fetch(`${API_BASE}/menus-wid/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((result as { message?: string }).message || 'Error al actualizar menú');
+  return result;
 }

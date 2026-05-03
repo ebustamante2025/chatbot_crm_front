@@ -4,10 +4,11 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # En Windows/Docker Desktop: host.docker.internal apunta al host (puerto 3001 = backend).
-    # Evita 502 cuando el DNS 127.0.0.11 no resuelve api-backend.
+    # Sustituido al arrancar el contenedor (ver docker-entrypoint.d).
+    # Por defecto: api-backend:3001 (docker-compose raíz con red compartida).
+    # API solo en el host (npm run dev): p. ej. host.docker.internal:3004
     location /api/ {
-        proxy_pass http://host.docker.internal:3001/api/;
+        proxy_pass http://__API_UPSTREAM__/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -16,7 +17,7 @@ server {
     }
 
     location /socket.io/ {
-        proxy_pass http://host.docker.internal:3001/socket.io/;
+        proxy_pass http://__API_UPSTREAM__/socket.io/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -26,13 +27,11 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # SPA: todas las rutas a index.html
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
 
-    # Cache para assets
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
