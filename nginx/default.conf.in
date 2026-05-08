@@ -5,7 +5,7 @@ server {
     index index.html;
 
     # Sustituido al arrancar el contenedor (ver docker-entrypoint.d).
-    # Por defecto: api-backend:3001 (docker-compose raíz con red compartida).
+    # Por defecto: api-backend:3001 (docker-compose raÃ­z con red compartida).
     # API solo en el host (npm run dev): p. ej. host.docker.internal:3004
     location /api/ {
         proxy_pass http://__API_UPSTREAM__/api/;
