@@ -1,27 +1,56 @@
-export type RolCRM = 'asesor' | 'administrador' | 'admin_faq' | 'historial' | 'seguimiento_bot';
+export type Direction = 'inbound' | 'outbound';
 
-export interface Mensaje {
-  id_mensaje: number;
-  conversacion_id: number;
-  tipo_emisor: 'CONTACTO' | 'AGENTE' | 'BOT' | 'IA360' | 'SISTEMA';
-  contenido: string;
-  creado_en: string;
-  contacto_nombre?: string;
-  agente_username?: string;
+export interface UserSession {
+  id: number;
+  full_name: string;
+  email: string;
+  role: 'ADMIN' | 'ASESOR' | 'SUPERVISOR' | string;
+  availability_status: string;
 }
 
-export interface Conversacion {
-  id_conversacion: number;
-  empresa_id: number;
-  contacto_id: number;
-  canal: string;
-  tema: string;
-  estado: string;
-  prioridad?: string;
-  contacto_nombre: string;
-  contacto_email?: string;
-  agente_username?: string;
-  ultima_actividad_en: string;
-  creada_en: string;
-  mensajes?: Mensaje[];
+export interface UserLite {
+  id: number;
+  full_name: string;
+  email: string;
+  role: string;
+  availability_status: string;
+  is_active?: boolean;
+  active_conversations?: number;
+}
+
+export interface ChatMessage {
+  id: number;
+  conversation_id?: number;
+  phone: string;
+  direction: Direction;
+  text: string;
+  created_at: string;
+}
+
+export interface Conversation {
+  id: number;
+  contact_id: number;
+  contact_phone: string | null;
+  contact_name: string | null;
+  case_status: string;
+  current_assigned_user_id: number | null;
+  assigned_user_name: string | null;
+  channel?: string;
+  priority?: string;
+  tags?: string[];
+  internal_notes?: string;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string | null;
+}
+
+export interface AuditItem {
+  id: number;
+  conversation_id: number;
+  user_id: number | null;
+  user_name: string;
+  action: string;
+  from_status: string;
+  to_status: string;
+  created_at: string;
 }

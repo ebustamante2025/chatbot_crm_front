@@ -1,4 +1,3 @@
-/* Layout principal - sin scroll de página, solo scroll interno (lista de chats y mensajes) */
 .crm-app {
   display: flex;
   flex-direction: column;
@@ -7,1174 +6,151 @@
   overflow: hidden;
 }
 
-/* Header con pestañas */
+.login-wrap { align-items: center; justify-content: center; }
+
 .crm-header {
-  background: var(--crm-header-bg);
-  border-bottom: 1px solid var(--crm-header-border);
-  padding: 0.25rem 1.5rem;
+  background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 45%, #e0ecff 100%);
+  border-bottom: 1px solid var(--crm-border);
+  padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
 }
 
-.crm-header-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-shrink: 0;
-}
+.crm-header h1 { font-size: 1.2rem; font-weight: 700; }
+.crm-header-user { display: flex; gap: 0.75rem; align-items: center; }
+.crm-header-user span { font-size: 0.9rem; color: var(--crm-text-muted); }
+.crm-tabs { display: flex; gap: 0.4rem; }
 
-.crm-header-logo {
-  height: 52px;
-  width: auto;
-  object-fit: contain;
-  mix-blend-mode: screen;
-}
-
-.crm-header h1 {
-  font-size: 1.25rem;
+.crm-availability-select,
+.crm-transfer-select {
+  appearance: none;
+  border: 1px solid #93c5fd;
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  color: #1e3a8a;
+  border-radius: 10px;
+  padding: 0.48rem 2rem 0.48rem 0.72rem;
   font-weight: 600;
-  color: var(--crm-header-text);
-  white-space: nowrap;
-}
-
-/* Pestañas de roles (Asesor, Administrador, Supervisor, Ventas) */
-.crm-tabs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.crm-tab {
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 0.5rem;
-  color: var(--crm-header-tab);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.12);
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.crm-tab:hover {
-  color: var(--crm-header-text);
-  background: var(--crm-header-tab-hover-bg);
-}
+.crm-main { flex: 1; display: flex; overflow: hidden; }
 
-.crm-tab--active {
-  background: var(--crm-blue-600);
-  color: white;
-  border-color: var(--crm-blue-500);
-}
-
-.crm-tab-admin-preg {
-  margin-left: 0.5rem;
-  border-left: 1px solid var(--crm-border);
-  padding-left: 0.75rem;
-}
-
-/* Panel Admin Preguntas Frecuentes */
-.crm-admin-pregfrecuen {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--crm-bg);
-  overflow: auto;
-}
-
-.crm-admin-pregfrecuen-header {
-  padding: 1.5rem 2rem;
-  background: var(--crm-surface);
-  border-bottom: 1px solid var(--crm-border);
-}
-
-.crm-admin-pregfrecuen-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--crm-text);
-  margin-bottom: 0.5rem;
-}
-
-.crm-admin-pregfrecuen-hint {
-  font-size: 0.875rem;
-  color: var(--crm-text-muted);
-  margin: 0;
-}
-
-.crm-admin-pregfrecuen-content {
-  flex: 1;
-  padding: 2rem;
-}
-
-.crm-admin-pregfrecuen-placeholder {
-  color: var(--crm-text-muted);
-  font-size: 0.95rem;
-}
-
-/* Main content */
-.crm-main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* Sidebar - lista de conversaciones */
 .crm-sidebar {
-  width: 280px;
-  min-width: 280px;
-  min-height: 0;
+  width: 350px;
+  min-width: 350px;
   background: var(--crm-surface);
   border-right: 1px solid var(--crm-border);
   display: flex;
   flex-direction: column;
 }
 
-.crm-sidebar-header {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--crm-border);
-}
-
-.crm-sidebar-header h2 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--crm-text);
-}
-
-.crm-sidebar-hint {
-  padding: 0.5rem 1rem;
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--crm-text-muted);
-  border-bottom: 1px solid var(--crm-border);
-  line-height: 1.3;
-}
-
-.crm-btn-refresh {
-  padding: 0.35rem 0.6rem;
-  background: var(--crm-surface-hover);
-  border: none;
-  border-radius: 0.375rem;
-  color: var(--crm-text);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.2s;
-}
-
-.crm-btn-refresh:hover {
-  background: var(--crm-blue-600);
-}
-
-.crm-conversaciones-lista {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0.5rem;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-.crm-conversaciones-lista::-webkit-scrollbar {
-  width: 8px;
-}
-.crm-conversaciones-lista::-webkit-scrollbar-track {
-  background: var(--crm-surface-hover, #f1f5f9);
-  border-radius: 4px;
-}
-.crm-conversaciones-lista::-webkit-scrollbar-thumb {
-  background: var(--crm-border, #cbd5e1);
-  border-radius: 4px;
-}
-.crm-conversaciones-lista::-webkit-scrollbar-thumb:hover {
-  background: var(--crm-text-muted, #94a3b8);
-}
-
-.crm-loading,
-.crm-empty {
-  padding: 1rem;
-  color: var(--crm-text-muted);
-  font-size: 0.875rem;
-}
+.crm-sidebar-header { padding: 1rem; border-bottom: 1px solid var(--crm-border); }
+.crm-conversaciones-lista { flex: 1; overflow-y: auto; padding: 0.5rem; }
 
 .crm-conversacion-item {
   width: 100%;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.25rem;
-  background: transparent;
-  border: none;
+  padding: 0.75rem;
+  border: 0;
   border-radius: 0.5rem;
-  color: var(--crm-text);
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.24rem;
+  background: transparent;
   cursor: pointer;
+}
+
+.crm-conversacion-item:hover { background: var(--crm-surface-hover); }
+.crm-conversacion-item--active { background: var(--crm-blue-600); color: #fff; }
+.crm-conversacion-nombre { font-weight: 600; }
+.crm-conversacion-contacto, .crm-conversacion-estado { font-size: 0.75rem; color: var(--crm-text-muted); }
+
+.crm-sla-pill {
+  display: inline-block;
+  width: fit-content;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.16rem 0.5rem;
+  margin-top: 0.2rem;
+}
+.crm-sla-pill[data-sla='ok'] { background: #dcfce7; color: #166534; }
+.crm-sla-pill[data-sla='warn'] { background: #fef3c7; color: #92400e; }
+.crm-sla-pill[data-sla='bad'] { background: #fee2e2; color: #991b1b; }
+
+.crm-chat-grid { flex: 1; display: grid; gap: 0.75rem; padding: 0.75rem; overflow: auto; }
+.crm-chat-card {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  transition: background 0.2s;
-}
-
-.crm-conversacion-item:hover {
-  background: var(--crm-surface-hover);
-}
-
-.crm-conversacion-item--active {
-  background: var(--crm-blue-600);
-  color: white;
-}
-
-.crm-conversacion-item--active .crm-conversacion-nit,
-.crm-conversacion-item--active .crm-conversacion-empresa,
-.crm-conversacion-item--active .crm-conversacion-estado {
-  opacity: 0.9;
-}
-
-.crm-conversacion-canal {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-right: 0.35rem;
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
-}
-.crm-conversacion-canal--telegram {
-  background: #0088cc;
-  color: white;
-}
-.crm-conversacion-item--active .crm-conversacion-canal--telegram {
-  background: rgba(255, 255, 255, 0.3);
-  color: white;
-}
-
-.crm-conversacion-nit {
-  font-size: 0.7rem;
-  opacity: 0.85;
-  color: var(--crm-text-muted);
-}
-
-.crm-conversacion-item--active .crm-conversacion-nit {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.crm-conversacion-empresa {
-  font-size: 0.75rem;
-  opacity: 0.9;
-  color: var(--crm-text-muted);
-}
-
-.crm-conversacion-empresa--truncar {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.crm-conversacion-item--active .crm-conversacion-empresa {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.crm-conversacion-nombre {
-  font-weight: 500;
-}
-
-.crm-conversacion-llegada {
-  font-size: 0.7rem;
-  opacity: 0.85;
-  color: var(--crm-text-muted);
-}
-
-.crm-conversacion-item--active .crm-conversacion-llegada {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.crm-conversacion-contacto {
-  font-size: 0.7rem;
-  opacity: 0.85;
-  color: var(--crm-text-muted);
-}
-
-.crm-conversacion-estado {
-  font-size: 0.75rem;
-  opacity: 0.85;
-  text-transform: uppercase;
-}
-
-/* Colores por estado en la lista de conversaciones */
-.crm-conversacion-estado--queue {
-  color: var(--crm-estado-queue);
-  font-weight: 500;
-}
-
-.crm-conversacion-estado--assigned {
-  color: var(--crm-estado-assigned);
-}
-
-.crm-conversacion-estado--active {
-  color: var(--crm-estado-active);
-}
-
-.crm-conversacion-estado--cerrada {
-  color: var(--crm-estado-cerrada);
-  font-weight: 500;
-}
-
-/* Área de chat */
-.crm-chat {
-  flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--crm-bg);
-  min-width: 0;
+  border: 1px solid var(--crm-border);
+  border-radius: 0.75rem;
+  background: var(--crm-surface);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
 }
 
 .crm-chat-header {
-  padding: 1rem 1.5rem;
-  background: var(--crm-surface);
+  padding: 0.9rem 1rem;
   border-bottom: 1px solid var(--crm-border);
   display: flex;
-  align-items: center;
   justify-content: space-between;
-}
-
-.crm-chat-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-}
-.crm-chat-canal {
-  font-size: 0.8rem;
-  font-weight: 500;
-  opacity: 0.9;
-}
-.crm-chat-canal--telegram {
-  color: #0088cc;
-}
-
-.crm-chat-meta {
-  font-size: 0.8rem;
-  color: var(--crm-text-muted);
-  display: block;
-}
-
-.crm-chat-meta-empresa {
-  font-weight: 500;
-  color: var(--crm-text);
-}
-
-.crm-chat-error {
-  font-size: 0.8rem;
-  color: #ef4444;
-  margin-right: 0.5rem;
-}
-
-.crm-loading-page {
-  min-height: 100vh;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--crm-text-muted);
-}
-
-.crm-header-user {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.crm-header-user span {
-  font-size: 0.875rem;
-  color: var(--crm-header-user-text);
-}
-
-.crm-theme-toggle {
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: none;
-  border-radius: 0.375rem;
-  background: var(--crm-header-tab-hover-bg);
-  cursor: pointer;
-  font-size: 1.05rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.crm-theme-toggle:hover {
-  background: var(--crm-header-logout-hover);
-  transform: scale(1.06);
-}
-
-.crm-theme-toggle:active {
-  transform: scale(0.98);
-}
-
-.crm-theme-toggle:focus-visible {
-  outline: 2px solid var(--crm-blue-400);
-  outline-offset: 2px;
-}
-
-.crm-header .crm-btn--logout {
-  padding: 0.35rem 0.75rem;
-  background: var(--crm-header-logout-bg);
-  color: var(--crm-header-logout-text);
-  border: 1px solid var(--crm-header-logout-border);
-  font-size: 0.8rem;
-}
-
-.crm-header .crm-btn--logout:hover {
-  background: var(--crm-header-logout-hover);
-}
-
-.crm-btn--logout {
-  padding: 0.35rem 0.75rem;
-  background: var(--crm-surface-hover);
-  color: var(--crm-text);
-  font-size: 0.8rem;
-}
-
-.crm-btn--logout:hover {
-  background: var(--crm-border);
-}
-
-.crm-chat-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-/* Menú desplegable de opciones */
-.crm-chat-menu-wrap {
-  position: relative;
-}
-
-.crm-chat-menu-btn {
-  background: var(--crm-surface-hover);
-  border: 1px solid var(--crm-border);
-  color: var(--crm-text);
-  font-size: 1.4rem;
-  font-weight: bold;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  line-height: 1;
-}
-
-.crm-chat-menu-btn:hover {
-  background: var(--crm-border);
-}
-
-.crm-chat-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 4px;
-  background: var(--crm-surface);
-  border: 1px solid var(--crm-border);
-  border-radius: 0.5rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 100;
-  min-width: 200px;
-  overflow: hidden;
-}
-
-.crm-chat-menu-item {
-  display: block;
-  width: 100%;
-  padding: 0.65rem 1rem;
-  background: none;
-  border: none;
-  color: var(--crm-text);
-  font-size: 0.85rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.crm-chat-menu-item:hover {
-  background: var(--crm-surface-hover);
-}
-
-.crm-chat-menu-item--transfer {
-  color: #60a5fa;
-}
-
-.crm-chat-menu-item--transfer:hover {
-  background: rgba(96, 165, 250, 0.1);
-}
-
-.crm-chat-menu-item--danger {
-  color: #a78bfa;
-}
-
-.crm-chat-menu-item--danger:hover {
-  background: rgba(248, 113, 113, 0.1);
-}
-
-/* Mensajes - tema azul para agente */
-.crm-chat-mensajes {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 1rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.crm-mensaje {
-  display: flex;
-  max-width: 75%;
-}
-
-.crm-mensaje--contacto {
-  align-self: flex-start;
-}
-
-.crm-mensaje--agente {
-  align-self: flex-end;
-}
-
-.crm-mensaje--bot,
-.crm-mensaje--ia360,
-.crm-mensaje--sistema {
-  align-self: center;
-  max-width: 90%;
-}
-
-.crm-mensaje-burbuja {
-  padding: 0.75rem 1rem;
-  border-radius: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-/* Mensaje del contacto (cliente) - gris */
-.crm-mensaje--contacto .crm-mensaje-burbuja {
-  background: var(--crm-surface);
-  border: 1px solid var(--crm-border);
-  border-bottom-left-radius: 0.25rem;
-}
-
-/* Mensaje del agente - AZUL */
-.crm-mensaje--agente .crm-mensaje-burbuja {
-  background: var(--crm-blue-600);
-  color: white;
-  border-bottom-right-radius: 0.25rem;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
-}
-
-/* Mensaje del bot / IA360 (asistente automático) */
-.crm-mensaje--bot .crm-mensaje-burbuja,
-.crm-mensaje--ia360 .crm-mensaje-burbuja {
-  background: var(--crm-surface);
-  border: 1px dashed var(--crm-blue-400);
-  color: var(--crm-text-muted);
-}
-
-/* Mensaje del sistema */
-.crm-mensaje--sistema .crm-mensaje-burbuja {
-  background: var(--crm-surface-hover);
-  color: var(--crm-text-muted);
-  font-size: 0.85rem;
-}
-
-.crm-mensaje-contenido {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.crm-mensaje-typing .crm-mensaje-contenido {
-  font-style: italic;
-  opacity: 0.9;
-}
-
-.crm-mensaje-typing .crm-mensaje-burbuja {
-  border: 1px dashed var(--crm-typing-border);
-  background: var(--crm-typing-bg);
-}
-
-.crm-mensaje-burbuja--live-preview {
-  background: var(--crm-peek-bubble-bg) !important;
-  border-color: var(--crm-live-preview-border);
-  padding: 10px 12px;
-}
-
-.crm-mensaje-peek-label {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--crm-peek-label);
-  font-style: italic;
-  margin-bottom: 6px;
-}
-
-.crm-mensaje-typing .crm-mensaje-peek-label {
-  color: var(--crm-peek-label-typing);
-  font-style: normal;
-  font-weight: 500;
-}
-
-.crm-mensaje-peek {
-  display: block;
-  font-size: 0.95rem;
-  color: var(--crm-peek-text);
-  word-wrap: break-word;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  min-height: 1.4em;
-}
-
-.crm-mensaje-peek-cursor {
-  display: inline-block;
-  font-size: 1rem;
-  color: var(--crm-peek-cursor);
-  animation: crm-cursor-blink 1s step-end infinite;
-  margin-left: 2px;
-  vertical-align: text-bottom;
-}
-
-@keyframes crm-cursor-blink {
-  50% { opacity: 0; }
-}
-
-.crm-mensaje-hora {
-  font-size: 0.7rem;
-  opacity: 0.8;
-  align-self: flex-end;
-}
-
-.crm-mensaje-meta {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  align-self: flex-end;
-}
-
-.crm-mensaje-flecha {
-  font-size: 10px;
-  opacity: 0.8;
-}
-
-.crm-mensaje--acciones .crm-mensaje-burbuja {
-  cursor: pointer;
-}
-
-.crm-mensaje--acciones .crm-mensaje-burbuja:hover {
-  filter: brightness(0.97);
-}
-
-/* Menú contextual mensaje (igual que widget: oscuro, junto al mensaje) */
-.crm-menu-mensaje-backdrop {
-  position: fixed;
-  inset: 0;
-  background: transparent;
-  z-index: 999;
-}
-
-.crm-menu-mensaje {
-  position: fixed;
-  z-index: 1000;
-  min-width: 160px;
-  background: var(--crm-menu-mensaje-bg);
-  border: 1px solid var(--crm-menu-mensaje-border);
-  border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
-  padding: 6px 0;
-  list-style: none;
-  margin: 0;
-}
-
-.crm-menu-mensaje-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  border: none;
-  background: none;
-  color: var(--crm-menu-mensaje-text);
-  font-size: 14px;
-  font-family: inherit;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s;
-}
-
-.crm-menu-mensaje-item:hover:not(:disabled) {
-  background: var(--crm-menu-mensaje-hover);
-}
-
-.crm-menu-mensaje-item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.crm-menu-mensaje-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.crm-menu-mensaje-item--editar {
-  color: var(--crm-menu-mensaje-text);
-}
-
-.crm-menu-mensaje-item--eliminar {
-  color: #fca5a5;
-}
-
-.crm-menu-mensaje-item--eliminar:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.2);
-  color: #fecaca;
-}
-
-.crm-menu-mensaje-hint {
-  margin: 6px 14px 0;
-  padding-top: 6px;
-  border-top: 1px solid var(--crm-menu-mensaje-border);
-  font-size: 11px;
-  color: var(--crm-menu-mensaje-muted);
-  line-height: 1.3;
-}
-
-/* Modal editar mensaje: input y botones */
-.crm-mensaje-editar-input {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  border: 1px solid var(--crm-border);
-  border-radius: 0.375rem;
-  resize: vertical;
-  min-height: 4rem;
-}
-.crm-mensaje-editar-actions {
-  display: flex;
   gap: 0.5rem;
 }
-.crm-btn--small {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
-}
+.crm-chat-header h3 { font-size: 0.95rem; }
+.crm-chat-meta { font-size: 0.78rem; color: var(--crm-text-muted); }
 
-/* Legacy: menú antiguo (clic derecho) - ya no se usa */
-.crm-context-menu-mensaje {
-  position: fixed;
-  z-index: 1000;
-  min-width: 10rem;
-  padding: 0.25rem 0;
-  background: var(--crm-surface, #fff);
-  border: 1px solid var(--crm-border, #e5e7eb);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-.crm-context-menu-item {
-  display: block;
-  width: 100%;
-  padding: 0.5rem 1rem;
-  text-align: left;
-  font-size: 0.875rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--crm-text);
-}
-.crm-context-menu-item:hover {
-  background: var(--crm-surface-hover, #f3f4f6);
-}
-.crm-context-menu-item--danger {
-  color: #b91c1c;
-}
-.crm-context-menu-item--danger:hover {
-  background: #fef2f2;
-}
+.crm-chat-mensajes { flex: 1; min-height: 0; overflow-y: auto; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.crm-mensaje { display: flex; max-width: 78%; }
+.crm-mensaje--contacto { align-self: flex-start; }
+.crm-mensaje--agente { align-self: flex-end; }
+.crm-mensaje-burbuja { padding: 0.65rem 0.85rem; border-radius: 0.9rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.crm-mensaje--contacto .crm-mensaje-burbuja { background: #fff; border: 1px solid var(--crm-border); border-bottom-left-radius: 0.3rem; }
+.crm-mensaje--agente .crm-mensaje-burbuja { background: var(--crm-blue-600); color: #fff; border-bottom-right-radius: 0.3rem; }
+.crm-mensaje-contenido { white-space: pre-wrap; word-break: break-word; }
+.crm-mensaje-hora { font-size: 0.68rem; opacity: 0.8; align-self: flex-end; }
 
-/* Modal pequeño editar mensaje (muestra: preview + Escribe un mensaje) */
-.crm-modal-editar-mensaje {
-  max-width: 22rem;
-}
-.crm-modal-editar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-.crm-modal-editar-mensaje h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-.crm-modal-editar-cerrar {
-  width: 1.75rem;
-  height: 1.75rem;
-  padding: 0;
-  border: none;
-  background: var(--crm-surface-hover, #f3f4f6);
-  border-radius: 0.25rem;
-  font-size: 1.25rem;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--crm-text);
-}
-.crm-modal-editar-cerrar:hover:not(:disabled) {
-  background: var(--crm-border, #e5e7eb);
-}
-.crm-modal-editar-preview {
-  margin-bottom: 0.75rem;
-}
-.crm-mensaje-burbuja--preview {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  max-width: 100%;
-  background: var(--crm-border, #e5e7eb);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
-}
-.crm-modal-editar-label {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--crm-text-muted, #6b7280);
-  margin-bottom: 0.35rem;
-}
-.crm-modal-editar-mensaje .crm-mensaje-editar-input {
-  margin-bottom: 0.75rem;
-}
-.crm-btn--confirm-edit {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--crm-blue-600, #2563eb);
-  color: white;
-}
-.crm-btn--confirm-edit .crm-btn-icon {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-}
-.crm-btn--confirm-edit:hover:not(:disabled) {
-  background: var(--crm-blue-500, #3b82f6);
-}
-
-/* Input de mensaje */
-.crm-chat-input {
-  padding: 1rem 1.5rem;
-  background: var(--crm-surface);
-  border-top: 1px solid var(--crm-border);
-  display: flex;
-  gap: 0.75rem;
-}
-
+.crm-chat-input { border-top: 1px solid var(--crm-border); padding: 0.8rem; display: flex; gap: 0.6rem; }
 .crm-chat-input input {
   flex: 1;
-  padding: 0.75rem 1rem;
-  background: var(--crm-bg);
+  padding: 0.65rem 0.85rem;
   border: 1px solid var(--crm-border);
-  border-radius: 0.5rem;
-  color: var(--crm-text);
-  font-size: 0.95rem;
-}
-
-.crm-chat-input input::placeholder {
-  color: var(--crm-text-muted);
-}
-
-.crm-chat-input input:focus {
-  outline: none;
-  border-color: var(--crm-blue-500);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-}
-
-/* Botones */
-.crm-btn {
-  padding: 0.5rem 1rem;
-  border: none;
   border-radius: 0.5rem;
   font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
 }
 
-.crm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.crm-btn--primary {
-  background: var(--crm-blue-600);
-  color: white;
-}
-
-.crm-btn--primary:hover:not(:disabled) {
-  background: var(--crm-blue-500);
-}
-
-.crm-btn--secondary {
-  background: var(--crm-surface-hover);
-  color: var(--crm-text);
-}
-
-.crm-btn--secondary:hover:not(:disabled) {
-  background: var(--crm-border);
-}
-
-.crm-btn--send {
-  background: var(--crm-blue-600);
-  color: white;
-  padding: 0.75rem 1.25rem;
-}
-
-.crm-btn--send:hover:not(:disabled) {
-  background: var(--crm-blue-500);
-}
-
-/* Estado vacío */
-.crm-chat-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--crm-text-muted);
-}
-
-/* ========== Tab Historial (conversaciones cerradas) ========== */
-.crm-historial {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  overflow: hidden;
-}
-
-.crm-chat-header--readonly {
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.crm-chat-badge-readonly {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--crm-surface-hover);
-  color: var(--crm-text-muted);
-  border-radius: 0.375rem;
-  font-weight: 500;
-}
-
-.crm-chat-mensajes--readonly {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.crm-chat-input--disabled {
-  justify-content: center;
-  background: var(--crm-surface-hover);
-}
-
-.crm-chat-input-hint {
+.crm-btn {
+  padding: 0.5rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
   font-size: 0.85rem;
-  color: var(--crm-text-muted);
-}
-
-.crm-conversacion-fecha {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--crm-text-muted);
-  margin-top: 0.25rem;
-}
-
-/* ========== Tab Seguimiento Bot ========== */
-.crm-seguimiento-bot .crm-seguimiento-bot-periodo {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0 1rem 0.5rem;
-}
-.crm-seguimiento-bot .crm-btn-periodo {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
-  border: 1px solid var(--crm-border);
-  border-radius: 0.375rem;
-  background: var(--crm-surface);
-  color: var(--crm-text-muted);
-  cursor: pointer;
-}
-.crm-seguimiento-bot .crm-btn-periodo:hover {
-  background: var(--crm-surface-hover);
-  color: var(--crm-text);
-}
-.crm-seguimiento-bot .crm-btn-periodo--active {
-  background: var(--crm-accent, #3b82f6);
-  border-color: var(--crm-accent, #3b82f6);
-  color: #fff;
-}
-
-/* ========== Modal Cerrar Caso ========== */
-.crm-modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.crm-modal {
-  background: var(--crm-surface);
-  border: 1px solid var(--crm-border);
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 28rem;
-  padding: 1.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-.crm-modal h3 {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--crm-text);
-}
-
-.crm-modal-subtitulo {
-  margin: 0 0 1.25rem;
-  font-size: 0.82rem;
-  color: var(--crm-text-muted);
-}
-
-.crm-modal-campo {
-  margin-bottom: 1rem;
-}
-
-.crm-modal-campo label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--crm-text-muted);
-  margin-bottom: 0.35rem;
-}
-
-.crm-modal-campo select,
-.crm-modal-campo textarea,
-.crm-modal-campo input {
-  width: 100%;
-  padding: 0.6rem 0.75rem;
-  background: var(--crm-surface-hover);
-  border: 1px solid var(--crm-border);
-  border-radius: 0.5rem;
-  color: var(--crm-text);
-  font-size: 0.88rem;
-  font-family: inherit;
-  resize: vertical;
-  transition: border-color 0.2s;
-}
-
-.crm-modal-campo select:focus,
-.crm-modal-campo textarea:focus,
-.crm-modal-campo input:focus {
-  outline: none;
-  border-color: var(--crm-blue-500);
-}
-
-.crm-modal-acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
-}
-
-.crm-btn {
-  padding: 0.55rem 1rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  border: none;
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition: all 120ms ease;
 }
 
-.crm-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.crm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.crm-btn--primary, .crm-btn--send { background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); color: #fff; box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35); }
+.crm-btn--logout { background: #fff; color: #334155; border-color: #bfdbfe; }
 
-.crm-btn--secondary {
-  background: var(--crm-surface-hover);
-  color: var(--crm-text);
-  border: 1px solid var(--crm-border);
-}
+.crm-empty, .crm-chat-empty { color: var(--crm-text-muted); padding: 1rem; }
+.crm-chat-error { color: #b42318; font-size: 0.8rem; padding: 0.6rem 0.9rem; }
+.crm-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.crm-table th, .crm-table td { border-bottom: 1px solid var(--crm-border); padding: 0.55rem; text-align: left; }
 
-.crm-btn--secondary:hover:not(:disabled) {
-  background: var(--crm-border);
-}
+.crm-modal { background: var(--crm-surface); border: 1px solid var(--crm-border); border-radius: 0.75rem; width: 100%; max-width: 28rem; padding: 1.4rem; }
+.crm-modal-subtitulo { margin-bottom: 1rem; font-size: 0.82rem; color: var(--crm-text-muted); }
+.crm-modal-campo { margin-bottom: 0.8rem; }
+.crm-modal-campo label { display: block; font-size: 0.78rem; color: var(--crm-text-muted); margin-bottom: 0.3rem; }
+.crm-modal-campo input { width: 100%; padding: 0.62rem 0.75rem; border: 1px solid var(--crm-border); border-radius: 0.45rem; }
+.crm-modal-error { color: #b42318; font-size: 0.8rem; margin-bottom: 0.7rem; }
+.crm-help { margin-top: 0.7rem; font-size: 0.74rem; color: var(--crm-text-muted); line-height: 1.35; }
 
-.crm-btn--danger {
-  background: #dc2626;
-  color: white;
-}
-
-.crm-btn--danger:hover:not(:disabled) {
-  background: #b91c1c;
-}
-
-.crm-btn--transfer {
-  background: #2563eb;
-  color: white;
-}
-
-.crm-btn--transfer:hover:not(:disabled) {
-  background: #1d4ed8;
-}
-
-.crm-modal-error {
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.3);
-  color: #a78bfa;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.4rem;
-  font-size: 0.82rem;
-  margin-bottom: 0.75rem;
-}
-
-[data-theme='light'] .crm-modal-error {
-  color: #991b1b;
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.22);
-}
-
-/* Alerta de sesión reemplazada */
-.crm-session-alert {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2000;
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  color: white;
-  text-align: center;
-  padding: 0.85rem 1.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
-  animation: crm-session-alert-in 0.4s ease;
-}
-
-@keyframes crm-session-alert-in {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+@media (max-width: 1000px) {
+  .crm-main { flex-direction: column; }
+  .crm-sidebar { width: 100%; min-width: 100%; height: 40vh; }
 }

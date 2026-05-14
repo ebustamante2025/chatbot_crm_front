@@ -1,38 +1,42 @@
-# CRM Frontend
+﻿# CRM WPS (Recreado)
 
-Panel para agentes donde llegan los mensajes del widget-chatbot. Permite chatear con clientes, asignar y cerrar conversaciones.
+Proyecto recreado desde cero con:
+- Frontend: React + Vite + TypeScript
+- Backend: Node + Express (MVC)
+- Persistencia: `crm-data.json` (local)
 
-## Características
+## Funcionalidades
+- Login local por rol (ASESOR / ADMIN / SUPERVISOR)
+- Asesor: máximo 2 conversaciones activas simultáneas
+- Si asesor no tiene tomadas: cola de disponibles ordenada por antigüedad
+- Admin/Supervisor: ven todas las conversaciones
+- Tomar caso cambia estado a `TOMADO_CASO`
+- Envío y recepción WhatsApp Cloud API
 
-- **Pestañas de roles** en la parte superior: Asesor, Administrador, Supervisor, Ventas
-- **Chat con color azul** para mensajes del agente
-- **Lista de conversaciones** del widget-chatbot
-- **Tomar conversación** (asignar a sí mismo)
-- **Enviar mensajes** al cliente
-- **Cerrar conversación**
+## Usuarios de prueba
+- `laura@wps.local` / `Admin12345` (ADMIN)
+- `daniel@wps.local` / `Asesor12345` (ASESOR)
+- `juan@wps.local` / `Asesor67890` (ASESOR)
+- `camila@wps.local` / `Supervisor123` (SUPERVISOR)
 
-## Requisitos
+## Variables de entorno
+Copia `.env.example` a `.env`.
 
-- API Backend corriendo en `http://localhost:3001`
-- Base de datos con datos de ejemplo (`npm run seed:run` en api-backend)
+## Ejecutar
+1. `npm install`
+2. `npm run seed:local`
+3. Terminal A: `npm run dev:api`
+4. Terminal B: `npm run dev`
+5. Abrir URL que muestre Vite (base 3005)
 
-## Cómo iniciar
-
-```bash
-# 1. Instalar dependencias
-cd apps/crm-frontend
-npm install
-
-# 2. Iniciar en modo desarrollo (puerto 3003)
-npm run dev
-```
-
-Abre http://localhost:3003
-
-## Flujo
-
-1. El cliente usa el widget, se registra y elige "Chatear con agente"
-2. Se crea una conversación en la BD (estado EN_COLA)
-3. Los mensajes del cliente se guardan en la BD
-4. El agente ve la conversación en el CRM, hace clic en "Tomar conversación"
-5. El agente puede enviar mensajes que el cliente ve en el widget (polling cada 3 segundos)
+## Endpoints
+- `POST /api/auth/login`
+- `GET /api/conversations/feed?role=ASESOR&user_id=2`
+- `GET /api/contacts`
+- `GET /api/conversations/:phone`
+- `POST /api/reply`
+- `POST /api/conversations/:id/take`
+- `PATCH /api/conversations/:id/status`
+- `GET /api/users`
+- `GET /webhook/whatsapp`
+- `POST /webhook/whatsapp`

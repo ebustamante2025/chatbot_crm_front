@@ -1,0 +1,317 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "full_name": "Laura Moreno",
+      "email": "laura@wps.local",
+      "password": "Admin12345",
+      "role": "ADMIN",
+      "availability_status": "DISPONIBLE",
+      "is_active": true,
+      "created_at": "2026-05-08T04:06:11.958Z"
+    },
+    {
+      "id": 2,
+      "full_name": "Daniel Rojas",
+      "email": "daniel@wps.local",
+      "password": "Asesor12345",
+      "role": "ASESOR",
+      "availability_status": "DISPONIBLE",
+      "is_active": true,
+      "created_at": "2026-05-08T17:26:11.958Z"
+    },
+    {
+      "id": 3,
+      "full_name": "Camila Torres",
+      "email": "camila@wps.local",
+      "password": "Supervisor123",
+      "role": "SUPERVISOR",
+      "availability_status": "OCUPADO",
+      "is_active": true,
+      "created_at": "2026-05-08T22:26:11.958Z"
+    },
+    {
+      "id": 4,
+      "full_name": "Juan Perez",
+      "email": "juan@wps.local",
+      "password": "Asesor67890",
+      "role": "ASESOR",
+      "availability_status": "DISPONIBLE",
+      "is_active": true,
+      "created_at": "2026-05-09T05:06:11.958Z"
+    }
+  ],
+  "contacts": [
+    {
+      "id": 1,
+      "phone": "573001112233",
+      "name": "Carlos Mejia",
+      "created_at": "2026-05-11T11:26:11.958Z",
+      "last_message_at": "2026-05-11T15:18:11.958Z"
+    },
+    {
+      "id": 2,
+      "phone": "573154447788",
+      "name": "Laura Sanchez",
+      "created_at": "2026-05-11T12:26:11.958Z",
+      "last_message_at": "2026-05-11T15:04:11.958Z"
+    },
+    {
+      "id": 3,
+      "phone": "573209991100",
+      "name": "Inversiones Andinas",
+      "created_at": "2026-05-11T13:16:11.958Z",
+      "last_message_at": "2026-05-11T14:41:11.958Z"
+    },
+    {
+      "id": 4,
+      "phone": "573102223344",
+      "name": "Marcela Castro",
+      "created_at": "2026-05-11T10:26:11.958Z",
+      "last_message_at": "2026-05-11T13:26:11.958Z"
+    }
+  ],
+  "conversations": [
+    {
+      "id": 1,
+      "contact_id": 1,
+      "case_status": "TERMINADO",
+      "current_assigned_user_id": 2,
+      "created_at": "2026-05-11T14:56:11.958Z",
+      "updated_at": "2026-05-11T20:11:11.038Z",
+      "closed_at": "2026-05-11T20:11:11.038Z",
+      "tags": [
+        "saludo"
+      ],
+      "internal_notes": "hola ",
+      "priority": "MEDIA"
+    },
+    {
+      "id": 2,
+      "contact_id": 2,
+      "case_status": "TOMADO_CASO",
+      "current_assigned_user_id": 2,
+      "created_at": "2026-05-11T14:36:11.958Z",
+      "updated_at": "2026-05-12T16:27:49.220Z",
+      "closed_at": null
+    },
+    {
+      "id": 3,
+      "contact_id": 3,
+      "case_status": "TERMINADO",
+      "current_assigned_user_id": 2,
+      "created_at": "2026-05-11T14:26:11.958Z",
+      "updated_at": "2026-05-11T16:43:03.382Z",
+      "closed_at": "2026-05-11T16:43:03.382Z"
+    },
+    {
+      "id": 4,
+      "contact_id": 4,
+      "case_status": "TOMADO_CASO",
+      "current_assigned_user_id": 2,
+      "created_at": "2026-05-11T12:06:11.958Z",
+      "updated_at": "2026-05-12T16:30:03.272Z",
+      "closed_at": null
+    }
+  ],
+  "assignments": [
+    {
+      "id": 1,
+      "conversation_id": 3,
+      "user_id": 2,
+      "action": "CAMBIO_ESTADO",
+      "from_status": "REVISADO",
+      "to_status": "TERMINADO",
+      "created_at": "2026-05-11T16:43:03.383Z"
+    },
+    {
+      "id": 2,
+      "created_at": "2026-05-11T20:10:49.957Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 3,
+      "created_at": "2026-05-11T20:10:50.510Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 4,
+      "created_at": "2026-05-11T20:10:57.031Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 5,
+      "created_at": "2026-05-11T20:10:58.334Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 6,
+      "created_at": "2026-05-11T20:10:58.790Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 7,
+      "created_at": "2026-05-11T20:11:06.414Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 8,
+      "created_at": "2026-05-11T20:11:06.862Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 9,
+      "created_at": "2026-05-11T20:11:07.065Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 10,
+      "created_at": "2026-05-11T20:11:07.237Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 11,
+      "created_at": "2026-05-11T20:11:08.783Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "EDITAR_META",
+      "from_status": "ATENDIENDO",
+      "to_status": "ATENDIENDO"
+    },
+    {
+      "id": 12,
+      "created_at": "2026-05-11T20:11:11.038Z",
+      "conversation_id": 1,
+      "user_id": 2,
+      "action": "CAMBIO_ESTADO",
+      "from_status": "ATENDIENDO",
+      "to_status": "TERMINADO"
+    },
+    {
+      "id": 13,
+      "created_at": "2026-05-12T16:27:49.220Z",
+      "conversation_id": 2,
+      "user_id": 2,
+      "action": "TOMAR",
+      "from_status": "SIN_TOMAR_CASO",
+      "to_status": "TOMADO_CASO"
+    },
+    {
+      "id": 14,
+      "created_at": "2026-05-12T16:30:03.273Z",
+      "conversation_id": 4,
+      "user_id": 2,
+      "action": "AUTO_ASIGNAR_ASESOR",
+      "from_status": "SIN_TOMAR_CASO",
+      "to_status": "TOMADO_CASO"
+    }
+  ],
+  "messages": [
+    {
+      "id": 1,
+      "conversation_id": 1,
+      "phone": "573001112233",
+      "direction": "inbound",
+      "text": "Hola, quiero informacion del plan premium.",
+      "whatsapp_message_id": null,
+      "message_status": "RECIBIDO",
+      "created_at": "2026-05-11T15:10:11.958Z"
+    },
+    {
+      "id": 2,
+      "conversation_id": 1,
+      "phone": "573001112233",
+      "direction": "outbound",
+      "text": "Hola Carlos, claro. Te comparto precios y beneficios ahora mismo.",
+      "whatsapp_message_id": null,
+      "message_status": "ENVIADO",
+      "created_at": "2026-05-11T15:11:11.958Z"
+    },
+    {
+      "id": 3,
+      "conversation_id": 1,
+      "phone": "573001112233",
+      "direction": "inbound",
+      "text": "Perfecto, tambien necesito saber tiempos de implementacion.",
+      "whatsapp_message_id": null,
+      "message_status": "RECIBIDO",
+      "created_at": "2026-05-11T15:18:11.958Z"
+    },
+    {
+      "id": 4,
+      "conversation_id": 2,
+      "phone": "573154447788",
+      "direction": "inbound",
+      "text": "Buen dia, me ayudas con el estado de mi pedido 7842?",
+      "whatsapp_message_id": null,
+      "message_status": "RECIBIDO",
+      "created_at": "2026-05-11T14:54:11.958Z"
+    },
+    {
+      "id": 5,
+      "conversation_id": 2,
+      "phone": "573154447788",
+      "direction": "outbound",
+      "text": "Hola Laura, ya lo reviso. Te confirmo en unos minutos.",
+      "whatsapp_message_id": null,
+      "message_status": "ENVIADO",
+      "created_at": "2026-05-11T15:04:11.958Z"
+    },
+    {
+      "id": 6,
+      "conversation_id": 3,
+      "phone": "573209991100",
+      "direction": "inbound",
+      "text": "Necesitamos una demo para 10 usuarios esta semana.",
+      "whatsapp_message_id": null,
+      "message_status": "RECIBIDO",
+      "created_at": "2026-05-11T14:41:11.958Z"
+    },
+    {
+      "id": 7,
+      "conversation_id": 4,
+      "phone": "573102223344",
+      "direction": "inbound",
+      "text": "Hola, no he recibido respuesta de soporte.",
+      "whatsapp_message_id": null,
+      "message_status": "RECIBIDO",
+      "created_at": "2026-05-11T13:26:11.958Z"
+    }
+  ]
+}

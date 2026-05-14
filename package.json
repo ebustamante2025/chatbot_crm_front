@@ -1,29 +1,26 @@
 {
-  "name": "crm-frontend",
+  "name": "whatsapp-crm-widget",
   "version": "1.0.0",
-  "type": "module",
-  "description": "CRM para agentes - Gestión de conversaciones del widget chatbot",
+  "private": true,
+  "description": "CRM WhatsApp con frontend React + Vite y backend Express",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node --watch backend/server.js",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "start": "node backend/server.js",
+    "seed:local": "node backend/seed-local.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "socket.io-client": "^4.8.3"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.1",
-    "@typescript-eslint/parser": "^7.13.1",
     "@vitejs/plugin-react": "^4.3.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-react-refresh": "^0.4.7",
     "typescript": "^5.5.3",
     "vite": "^5.3.1"
   }
