@@ -483,6 +483,118 @@ export async function guardarPoliticaWidgetInactividad(
   return data as { politica: WidgetPoliticaInactividad; message?: string };
 }
 
+// --- Horario agente humano (widget), festivos CO + excepciones. Solo ADMIN. ---
+
+export interface WidgetHorarioAgenteConfig {
+  id: number;
+  zona_horaria: string;
+  lunes: boolean;
+  martes: boolean;
+  miercoles: boolean;
+  jueves: boolean;
+  viernes: boolean;
+  sabado: boolean;
+  domingo: boolean;
+  hora_inicio: string;
+  hora_fin: string;
+  tooltip_fuera_horario: string | null;
+  mensaje_fuera_horario: string | null;
+  actualizado_en: string;
+}
+
+export interface WidgetHorarioExcepcion {
+  id: number;
+  fecha: string;
+  tipo: 'cerrado' | 'horario_especial';
+  hora_inicio: string | null;
+  hora_fin: string | null;
+  nota: string | null;
+  activo: boolean;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export async function obtenerHorarioAgenteConfig(): Promise<{ config: WidgetHorarioAgenteConfig }> {
+  const res = await fetch(`${API_BASE}/admin/widget-horario-agente/config`, { headers: authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error || 'Error al cargar horario');
+  return data as { config: WidgetHorarioAgenteConfig };
+}
+
+export async function guardarHorarioAgenteConfig(
+  body: Partial<
+    Pick<
+      WidgetHorarioAgenteConfig,
+      | 'lunes'
+      | 'martes'
+      | 'miercoles'
+      | 'jueves'
+      | 'viernes'
+      | 'sabado'
+      | 'domingo'
+      | 'hora_inicio'
+      | 'hora_fin'
+      | 'tooltip_fuera_horario'
+      | 'mensaje_fuera_horario'
+    >
+  >,
+): Promise<{ config: WidgetHorarioAgenteConfig; message?: string }> {
+  const res = await fetch(`${API_BASE}/admin/widget-horario-agente/config`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error || 'Error al guardar');
+  return data as { config: WidgetHorarioAgenteConfig; message?: string };
+}
+
+export async function listarHorarioAgenteExcepciones(): Promise<{ excepciones: WidgetHorarioExcepcion[] }> {
+  const res = await fetch(`${API_BASE}/admin/widget-horario-agente/excepciones`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Error al listar excepciones');
+  return res.json();
+}
+
+export async function guardarHorarioAgenteExcepcion(body: {
+  fecha: string;
+  tipo: 'cerrado' | 'horario_especial';
+  hora_inicio?: string | null;
+  hora_fin?: string | null;
+  nota?: string | null;
+  activo?: boolean;
+}): Promise<{ excepciones: WidgetHorarioExcepcion[]; message?: string }> {
+  const res = await fetch(`${API_BASE}/admin/widget-horario-agente/excepciones`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { error?: string }).error || 'Error al guardar excepción');
+  return data as { excepciones: WidgetHorarioExcepcion[]; message?: string };
+}
+
+export async function eliminarHorarioAgenteExcepcion(id: number): Promise<{ excepciones: WidgetHorarioExcepcion[] }> {
+  const res = await fetch(`${API_BASE}/admin/widget-horario-agente/excepciones/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Error al eliminar');
+  return res.json();
+}
+
+export async function obtenerHorarioAgenteEstadoActual(): Promise<{
+  disponible: boolean;
+  codigo: string;
+  razon: string;
+  proximo_resumen: string | null;
+  es_festivo: boolean;
+  nombre_festivo: string | null;
+}> {
+  const res = await fetch(`${API_BASE}/admin/widget-horario-agente/estado-actual`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Error al cargar estado');
+  return res.json();
+}
+
 // =============================================
 // ADMIN: DASHBOARD
 // =============================================

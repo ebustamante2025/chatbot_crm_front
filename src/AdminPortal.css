@@ -984,3 +984,236 @@
   padding: 0 2px;
   user-select: none;
 }
+
+/* ========== Horario agente (widget) — layout de formulario ========== */
+.crm-admin-horario-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 1100px;
+}
+
+.crm-admin-horario-page__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--crm-text);
+}
+
+.crm-admin-horario-page__intro {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--crm-text-muted);
+  line-height: 1.45;
+}
+
+.crm-admin-horario-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 0.65rem;
+  border: 1px solid var(--crm-border);
+  background: var(--crm-surface);
+}
+
+.crm-admin-horario-status--ok {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.crm-admin-horario-status--off {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.07);
+}
+
+.crm-admin-horario-status__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 0.35rem;
+  flex-shrink: 0;
+}
+
+.crm-admin-horario-status--ok .crm-admin-horario-status__dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
+}
+
+.crm-admin-horario-status--off .crm-admin-horario-status__dot {
+  background: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.22);
+}
+
+.crm-admin-horario-status__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.crm-admin-horario-status__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--crm-text-muted);
+}
+
+.crm-admin-horario-status__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--crm-text);
+  margin: 0.1rem 0 0.15rem;
+}
+
+.crm-admin-horario-status__razon {
+  font-size: 0.82rem;
+  color: var(--crm-text-muted);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.crm-admin-horario-status__proximo {
+  font-size: 0.78rem;
+  color: var(--crm-text);
+  margin: 0.35rem 0 0;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--crm-border);
+}
+
+.crm-admin-horario-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 960px) {
+  .crm-admin-horario-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.crm-admin-horario-panel {
+  background: var(--crm-surface);
+  border: 1px solid var(--crm-border);
+  border-radius: 0.75rem;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.crm-admin-horario-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--crm-border);
+}
+
+.crm-admin-horario-panel__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--crm-text);
+}
+
+.crm-admin-horario-dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.crm-admin-horario-dia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--crm-border);
+  background: var(--crm-surface-hover);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--crm-text);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.crm-admin-horario-dia--on {
+  border-color: #001689;
+  background: rgba(0, 22, 137, 0.08);
+  color: #001689;
+}
+
+.crm-admin-horario-dia input {
+  margin: 0;
+  accent-color: #001689;
+}
+
+.crm-admin-horario-times {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.crm-admin-horario-panel__footer {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.crm-admin-horario-exc-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 520px) {
+  .crm-admin-horario-exc-grid {
+    grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  }
+}
+
+.crm-admin-horario-exc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.crm-admin-horario-empty {
+  text-align: center;
+  padding: 1.75rem 1rem;
+  border: 1px dashed var(--crm-border);
+  border-radius: 0.65rem;
+  background: var(--crm-surface-hover);
+}
+
+.crm-admin-horario-empty__icon {
+  font-size: 1.75rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  opacity: 0.85;
+}
+
+.crm-admin-horario-empty__text {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--crm-text-muted);
+}
+
+.crm-admin-horario-table-wrap {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--crm-border);
+}
+
+.crm-admin-horario-table-wrap .crm-admin-table {
+  margin: 0;
+  font-size: 0.85rem;
+}

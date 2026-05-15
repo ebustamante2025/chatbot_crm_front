@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Socket } from 'socket.io-client'
 import {
   listarUsuarios,
@@ -11,6 +11,12 @@ import {
   actualizarEmpresa,
   obtenerPoliticaWidgetInactividad,
   guardarPoliticaWidgetInactividad,
+  obtenerHorarioAgenteConfig,
+  guardarHorarioAgenteConfig,
+  listarHorarioAgenteExcepciones,
+  guardarHorarioAgenteExcepcion,
+  eliminarHorarioAgenteExcepcion,
+  obtenerHorarioAgenteEstadoActual,
   obtenerDashboardStats,
   obtenerActividadReciente,
   obtenerConversacionesActivas,
@@ -28,6 +34,8 @@ import type {
   ConversacionBot,
   Transferencia,
   MenuWid,
+  WidgetHorarioAgenteConfig,
+  WidgetHorarioExcepcion,
 } from './services/api'
 import './AdminPortal.css'
 
@@ -37,6 +45,7 @@ type SeccionAdmin =
   | 'transferencias'
   | 'usuarios'
   | 'empresas'
+  | 'widget_horario_agente'
   | 'widget_inactividad'
   | 'menus_widget'
 
@@ -116,6 +125,7 @@ export const OPCIONES_VISTAS: { id: string; label: string; grupo: 'tab' | 'admin
   { id: 'transferencias', label: 'Panel Admin — Transferencias', grupo: 'admin' },
   { id: 'usuarios', label: 'Panel Admin — Usuarios', grupo: 'admin' },
   { id: 'empresas', label: 'Panel Admin — Empresas', grupo: 'admin' },
+  { id: 'widget_horario_agente', label: 'Panel Admin — Horario agente', grupo: 'admin' },
   { id: 'widget_inactividad', label: 'Panel Admin — Widget inactividad', grupo: 'admin' },
   { id: 'menus_widget', label: 'Panel Admin — Menús Widget', grupo: 'admin' },
 ]
@@ -959,6 +969,478 @@ function UsuariosSection() {
   )
 }
 
+function sliceTimeHHMM(t: string | null | undefined): string {
+  if (!t) return '08:00'
+  return String(t).slice(0, 5)
+}
+
+const HORARIO_AGENTE_DIA_KEYS = [
+  'lunes',
+  'martes',
+  'miercoles',
+  'jueves',
+  'viernes',
+  'sabado',
+  'domingo',
+] as const
+
+const HORARIO_AGENTE_DIA_NOMBRE: Record<(typeof HORARIO_AGENTE_DIA_KEYS)[number], string> = {
+  lunes: 'lunes',
+  martes: 'martes',
+  miercoles: 'miércoles',
+  jueves: 'jueves',
+  viernes: 'viernes',
+  sabado: 'sábado',
+  domingo: 'domingo',
+}
+
+/** HH:mm (24 h) → p. ej. 8:00 AM / 5:30 PM (texto para usuarios finales). */
+function horaHHMMaAMPM(hhmm: string): string {
+  const s = hhmm.trim().slice(0, 5)
+  const [hs, ms] = s.split(':')
+  const hRaw = Number.parseInt(hs ?? '0', 10)
+  const m = (ms ?? '00').slice(0, 2)
+  if (!Number.isFinite(hRaw) || hRaw < 0 || hRaw > 23) return `${s} h`
+  if (hRaw === 0) return `12:${m} AM`
+  if (hRaw < 12) return `${hRaw}:${m} AM`
+  if (hRaw === 12) return `12:${m} PM`
+  return `${hRaw - 12}:${m} PM`
+}
+
+function formatearDiasAtencionHorarioAgente(
+  c: Pick<WidgetHorarioAgenteConfig, (typeof HORARIO_AGENTE_DIA_KEYS)[number]>,
+): string {
+  const activos = HORARIO_AGENTE_DIA_KEYS.map((k, i) => (c[k] ? i : -1)).filter((i) => i >= 0)
+  if (activos.length === 0) return 'ningún día (revise la configuración)'
+  if (activos.length === 7) return 'todos los días'
+  const sorted = [...new Set(activos)].sort((a, b) => a - b)
+  if (sorted.length === 1) {
+    const k = HORARIO_AGENTE_DIA_KEYS[sorted[0]!]!
+    return `los ${HORARIO_AGENTE_DIA_NOMBRE[k]}`
+  }
+  let i = 1
+  while (i < sorted.length && sorted[i] === sorted[i - 1]! + 1) i += 1
+  if (i === sorted.length) {
+    const k0 = HORARIO_AGENTE_DIA_KEYS[sorted[0]!]!
+    const k1 = HORARIO_AGENTE_DIA_KEYS[sorted[sorted.length - 1]!]!
+    return `${HORARIO_AGENTE_DIA_NOMBRE[k0]} a ${HORARIO_AGENTE_DIA_NOMBRE[k1]}`
+  }
+  const labels = sorted.map((idx) => HORARIO_AGENTE_DIA_NOMBRE[HORARIO_AGENTE_DIA_KEYS[idx]!]!)
+  if (labels.length === 2) return `${labels[0]} y ${labels[1]}`
+  const last = labels.pop()!
+  return `${labels.join(', ')} y ${last}`
+}
+
+/** Texto sugerido para tooltip fuera de horario (alineado al horario general del formulario). */
+function construirTooltipFueraHorarioAgente(
+  c: Pick<WidgetHorarioAgenteConfig, (typeof HORARIO_AGENTE_DIA_KEYS)[number]>,
+  horaInicio: string,
+  horaFin: string,
+): string {
+  const diasTxt = formatearDiasAtencionHorarioAgente(c)
+  const hiAm = horaHHMMaAMPM(horaInicio)
+  const hfAm = horaHHMMaAMPM(horaFin)
+  return `Nos encontramos fuera de horario laboral. Nuestro horario de atención es de ${diasTxt} de ${hiAm} a ${hfAm}.`
+}
+
+function WidgetHorarioAgenteSection() {
+  const [cargando, setCargando] = useState(true)
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [okMsg, setOkMsg] = useState<string | null>(null)
+  const [config, setConfig] = useState<WidgetHorarioAgenteConfig | null>(null)
+  const [horaInicio, setHoraInicio] = useState('08:00')
+  const [horaFin, setHoraFin] = useState('17:30')
+  const [excepciones, setExcepciones] = useState<WidgetHorarioExcepcion[]>([])
+  const [estado, setEstado] = useState<{
+    disponible: boolean
+    codigo: string
+    razon: string
+    proximo_resumen: string | null
+    es_festivo: boolean
+    nombre_festivo: string | null
+  } | null>(null)
+  const [excFecha, setExcFecha] = useState('')
+  const [excTipo, setExcTipo] = useState<'cerrado' | 'horario_especial'>('cerrado')
+  const [excHi, setExcHi] = useState('09:00')
+  const [excHf, setExcHf] = useState('13:00')
+  const [excNota, setExcNota] = useState('')
+  /** Último texto generado a partir de días + horas (para saber si el admin sigue el auto o lo personalizó). */
+  const prevAutoTooltipRef = useRef('')
+
+  const cargarTodo = useCallback(async () => {
+    setCargando(true)
+    setError(null)
+    try {
+      const [c, e, es] = await Promise.all([
+        obtenerHorarioAgenteConfig(),
+        listarHorarioAgenteExcepciones(),
+        obtenerHorarioAgenteEstadoActual(),
+      ])
+      setConfig(c.config)
+      const hi0 = sliceTimeHHMM(c.config.hora_inicio)
+      const hf0 = sliceTimeHHMM(c.config.hora_fin)
+      setHoraInicio(hi0)
+      setHoraFin(hf0)
+      prevAutoTooltipRef.current = construirTooltipFueraHorarioAgente(c.config, hi0, hf0)
+      setExcepciones(e.excepciones)
+      setEstado(es)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar')
+    } finally {
+      setCargando(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void cargarTodo()
+    const iv = setInterval(() => {
+      obtenerHorarioAgenteEstadoActual()
+        .then(setEstado)
+        .catch(() => {})
+    }, 30000)
+    return () => clearInterval(iv)
+  }, [cargarTodo])
+
+  useEffect(() => {
+    if (!config || cargando) return
+    const auto = construirTooltipFueraHorarioAgente(config, horaInicio, horaFin)
+    const cur = (config.tooltip_fuera_horario ?? '').trim()
+    const prev = prevAutoTooltipRef.current.trim()
+    if (cur === prev || cur === '') {
+      if (cur !== auto.trim()) {
+        setConfig((co) => (co ? { ...co, tooltip_fuera_horario: auto } : null))
+      }
+    }
+    prevAutoTooltipRef.current = auto
+  }, [
+    cargando,
+    config?.lunes,
+    config?.martes,
+    config?.miercoles,
+    config?.jueves,
+    config?.viernes,
+    config?.sabado,
+    config?.domingo,
+    horaInicio,
+    horaFin,
+  ])
+
+  const rellenarTooltipDesdeHorario = () => {
+    if (!config) return
+    const auto = construirTooltipFueraHorarioAgente(config, horaInicio, horaFin)
+    prevAutoTooltipRef.current = auto
+    setConfig({ ...config, tooltip_fuera_horario: auto })
+  }
+
+  const guardarCfg = async () => {
+    if (!config) return
+    setGuardando(true)
+    setError(null)
+    setOkMsg(null)
+    try {
+      const { config: nc } = await guardarHorarioAgenteConfig({
+        lunes: config.lunes,
+        martes: config.martes,
+        miercoles: config.miercoles,
+        jueves: config.jueves,
+        viernes: config.viernes,
+        sabado: config.sabado,
+        domingo: config.domingo,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin,
+        tooltip_fuera_horario: config.tooltip_fuera_horario ?? '',
+        mensaje_fuera_horario: config.mensaje_fuera_horario ?? '',
+      })
+      setConfig(nc)
+      prevAutoTooltipRef.current = construirTooltipFueraHorarioAgente(
+        nc,
+        sliceTimeHHMM(nc.hora_inicio),
+        sliceTimeHHMM(nc.hora_fin),
+      )
+      setOkMsg('Configuración guardada.')
+      setEstado(await obtenerHorarioAgenteEstadoActual())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al guardar')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const agregarExcepcion = async () => {
+    if (!excFecha.trim()) {
+      setError('Indique la fecha (YYYY-MM-DD)')
+      return
+    }
+    setGuardando(true)
+    setError(null)
+    setOkMsg(null)
+    try {
+      const { excepciones: lista } = await guardarHorarioAgenteExcepcion({
+        fecha: excFecha.trim().slice(0, 10),
+        tipo: excTipo,
+        hora_inicio: excTipo === 'horario_especial' ? excHi : null,
+        hora_fin: excTipo === 'horario_especial' ? excHf : null,
+        nota: excNota.trim() || null,
+        activo: true,
+      })
+      setExcepciones(lista)
+      setOkMsg('Novedad guardada.')
+      setExcFecha('')
+      setExcNota('')
+      setEstado(await obtenerHorarioAgenteEstadoActual())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const borrarExc = async (id: number) => {
+    if (!confirm('¿Eliminar esta novedad?')) return
+    setGuardando(true)
+    try {
+      const { excepciones: lista } = await eliminarHorarioAgenteExcepcion(id)
+      setExcepciones(lista)
+      setEstado(await obtenerHorarioAgenteEstadoActual())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const toggleDia = (dia: keyof Pick<WidgetHorarioAgenteConfig, 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes' | 'sabado' | 'domingo'>) => {
+    setConfig((c) => (c ? { ...c, [dia]: !c[dia] } : c))
+  }
+
+  if (cargando || !config) {
+    return (
+      <div className="crm-admin-horario-page">
+        <div className="crm-admin-horario-panel">
+          <p className="crm-loading" style={{ margin: 0 }}>Cargando horario del widget…</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="crm-admin-horario-page">
+      <header>
+        <h2 className="crm-admin-horario-page__title">Horario — chatear con agente (Colombia)</h2>
+        <p className="crm-admin-horario-page__intro">
+          Prioridad: <strong>novedades por fecha</strong> → <strong>festivos Colombia</strong> (Nager) →{' '}
+          <strong>horario general</strong>. Zona horaria: <code>{config.zona_horaria}</code>.
+        </p>
+      </header>
+
+      {error && <div className="crm-admin-error">{error}</div>}
+      {okMsg && <div className="crm-admin-info-box">{okMsg}</div>}
+
+      {estado && (
+        <div
+          className={`crm-admin-horario-status ${estado.disponible ? 'crm-admin-horario-status--ok' : 'crm-admin-horario-status--off'}`}
+          role="status"
+        >
+          <span className="crm-admin-horario-status__dot" aria-hidden />
+          <div className="crm-admin-horario-status__body">
+            <div className="crm-admin-horario-status__label">Estado en este momento</div>
+            <p className="crm-admin-horario-status__title">
+              {estado.disponible ? 'Atención con agente disponible' : 'Sin atención con agente'}
+            </p>
+            <p className="crm-admin-horario-status__razon">{estado.razon}</p>
+            {estado.proximo_resumen && (
+              <p className="crm-admin-horario-status__proximo">{estado.proximo_resumen}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="crm-admin-horario-grid">
+        <section className="crm-admin-horario-panel" aria-labelledby="horario-general-title">
+          <div className="crm-admin-horario-panel__head">
+            <h3 id="horario-general-title" className="crm-admin-horario-panel__title">
+              Horario general
+            </h3>
+          </div>
+
+          <div>
+            <span className="crm-admin-field-hint" style={{ display: 'block', marginBottom: '0.45rem' }}>
+              Días con atención
+            </span>
+            <div className="crm-admin-horario-dias" role="group" aria-label="Días hábiles">
+              {(
+                [
+                  ['lunes', 'Lun'],
+                  ['martes', 'Mar'],
+                  ['miercoles', 'Mié'],
+                  ['jueves', 'Jue'],
+                  ['viernes', 'Vie'],
+                  ['sabado', 'Sáb'],
+                  ['domingo', 'Dom'],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className={`crm-admin-horario-dia${config[k] ? ' crm-admin-horario-dia--on' : ''}`}>
+                  <input type="checkbox" checked={Boolean(config[k])} onChange={() => toggleDia(k)} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="crm-admin-horario-times">
+            <div className="crm-admin-field">
+              <label htmlFor="horario-hi">Hora inicio</label>
+              <input id="horario-hi" type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
+            </div>
+            <div className="crm-admin-field">
+              <label htmlFor="horario-hf">Hora fin</label>
+              <input id="horario-hf" type="time" value={horaFin} onChange={(e) => setHoraFin(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="crm-admin-field">
+            <label htmlFor="horario-tooltip">Tooltip (botón deshabilitado en el widget)</label>
+            <p className="crm-admin-field-hint" style={{ margin: '0.35rem 0 0.45rem' }}>
+              Se genera a partir de los días y las horas de arriba. Si no lo edita a mano, el texto se
+              actualizará solo al cambiar el horario. Si lo personaliza y luego quiere volver al texto
+              automático, use «Rellenar desde horario».
+            </p>
+            <textarea
+              id="horario-tooltip"
+              rows={2}
+              value={config.tooltip_fuera_horario ?? ''}
+              onChange={(e) => setConfig({ ...config, tooltip_fuera_horario: e.target.value })}
+            />
+            <div style={{ marginTop: '0.5rem' }}>
+              <button type="button" className="crm-btn crm-btn--secondary" onClick={rellenarTooltipDesdeHorario}>
+                Rellenar desde horario
+              </button>
+            </div>
+          </div>
+          <div className="crm-admin-field">
+            <label htmlFor="horario-msg">Mensaje al usuario (fuera de horario o festivo)</label>
+            <textarea
+              id="horario-msg"
+              rows={5}
+              value={config.mensaje_fuera_horario ?? ''}
+              onChange={(e) => setConfig({ ...config, mensaje_fuera_horario: e.target.value })}
+            />
+          </div>
+
+          <div className="crm-admin-horario-panel__footer">
+            <button type="button" className="crm-btn crm-btn--primary" onClick={guardarCfg} disabled={guardando}>
+              {guardando ? 'Guardando…' : 'Guardar horario general'}
+            </button>
+          </div>
+        </section>
+
+        <section className="crm-admin-horario-panel" aria-labelledby="horario-novedades-title">
+          <div className="crm-admin-horario-panel__head">
+            <h3 id="horario-novedades-title" className="crm-admin-horario-panel__title">
+              Novedades y excepciones
+            </h3>
+          </div>
+          <p className="crm-admin-field-hint" style={{ margin: '-0.25rem 0 0' }}>
+            Cierre puntual, inventario o franja distinta un día concreto (tiene prioridad sobre festivos y horario general).
+          </p>
+
+          <div className="crm-admin-horario-exc-grid">
+            <div className="crm-admin-field">
+              <label htmlFor="exc-fecha">Fecha</label>
+              <input id="exc-fecha" type="date" value={excFecha} onChange={(e) => setExcFecha(e.target.value)} />
+            </div>
+            <div className="crm-admin-field">
+              <label htmlFor="exc-tipo">Tipo</label>
+              <select
+                id="exc-tipo"
+                value={excTipo}
+                onChange={(e) => setExcTipo(e.target.value as 'cerrado' | 'horario_especial')}
+              >
+                <option value="cerrado">Cerrado (sin servicio)</option>
+                <option value="horario_especial">Horario especial</option>
+              </select>
+            </div>
+          </div>
+
+          {excTipo === 'horario_especial' && (
+            <div className="crm-admin-horario-times">
+              <div className="crm-admin-field">
+                <label htmlFor="exc-hi">Desde</label>
+                <input id="exc-hi" type="time" value={excHi} onChange={(e) => setExcHi(e.target.value)} />
+              </div>
+              <div className="crm-admin-field">
+                <label htmlFor="exc-hf">Hasta</label>
+                <input id="exc-hf" type="time" value={excHf} onChange={(e) => setExcHf(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          <div className="crm-admin-field">
+            <label htmlFor="exc-nota">Nota (opcional)</label>
+            <input
+              id="exc-nota"
+              type="text"
+              value={excNota}
+              onChange={(e) => setExcNota(e.target.value)}
+              placeholder="Ej. Cierre por inventario"
+            />
+          </div>
+
+          <div className="crm-admin-horario-exc-actions">
+            <button type="button" className="crm-btn crm-btn--secondary" onClick={agregarExcepcion} disabled={guardando}>
+              Añadir o actualizar novedad
+            </button>
+          </div>
+
+          {excepciones.length === 0 ? (
+            <div className="crm-admin-horario-empty">
+              <span className="crm-admin-horario-empty__icon" aria-hidden>
+                📅
+              </span>
+              <p className="crm-admin-horario-empty__text">No hay novedades registradas. Añada una fecha para cerrar el servicio o aplicar un horario distinto.</p>
+            </div>
+          ) : (
+            <div className="crm-admin-horario-table-wrap">
+              <table className="crm-admin-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Horario</th>
+                    <th>Nota</th>
+                    <th style={{ width: '1%' }} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {excepciones.map((x) => (
+                    <tr key={x.id}>
+                      <td>{x.fecha}</td>
+                      <td>{x.tipo === 'cerrado' ? 'Cerrado' : 'Horario especial'}</td>
+                      <td>{x.tipo === 'horario_especial' ? `${sliceTimeHHMM(x.hora_inicio)} – ${sliceTimeHHMM(x.hora_fin)}` : '—'}</td>
+                      <td>{x.nota || '—'}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="crm-btn crm-btn--small"
+                          onClick={() => borrarExc(x.id)}
+                          disabled={guardando}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
+}
+
 // =============================
 // Widget — inactividad del contacto (solo rol ADMIN en API)
 // =============================
@@ -1093,24 +1575,30 @@ function WidgetInactividadSection() {
                   {' '}Política activa
                 </label>
               </div>
-              <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
-                <label htmlFor="widget-inact-m1">Mensaje — 1.er aviso</label>
-                <textarea
-                  id="widget-inact-m1"
-                  rows={3}
-                  value={form.mensaje_aviso_1}
-                  onChange={(e) => setForm((f) => ({ ...f, mensaje_aviso_1: e.target.value }))}
-                />
-              </div>
-              <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
-                <label htmlFor="widget-inact-m2">Mensaje — 2.o aviso (y siguientes si hay más de dos avisos)</label>
-                <textarea
-                  id="widget-inact-m2"
-                  rows={3}
-                  value={form.mensaje_aviso_2}
-                  onChange={(e) => setForm((f) => ({ ...f, mensaje_aviso_2: e.target.value }))}
-                />
-              </div>
+              {form.numero_avisos_inactividad >= 1 && (
+                <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="widget-inact-m1">Mensaje — 1.er aviso</label>
+                  <textarea
+                    id="widget-inact-m1"
+                    rows={3}
+                    value={form.mensaje_aviso_1}
+                    onChange={(e) => setForm((f) => ({ ...f, mensaje_aviso_1: e.target.value }))}
+                  />
+                </div>
+              )}
+              {form.numero_avisos_inactividad >= 2 && (
+                <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="widget-inact-m2">
+                    Mensaje — 2.o aviso{form.numero_avisos_inactividad > 2 ? ` (y siguientes hasta el ${form.numero_avisos_inactividad}.o)` : ''}
+                  </label>
+                  <textarea
+                    id="widget-inact-m2"
+                    rows={3}
+                    value={form.mensaje_aviso_2}
+                    onChange={(e) => setForm((f) => ({ ...f, mensaje_aviso_2: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="crm-admin-field" style={{ gridColumn: '1 / -1' }}>
                 <label htmlFor="widget-inact-m3">Mensaje — cierre por inactividad</label>
                 <textarea
@@ -1522,6 +2010,7 @@ const SECCIONES_ADMIN: { id: SeccionAdmin; label: string; icon: string }[] = [
   { id: 'transferencias', label: 'Transferencias', icon: '🔄' },
   { id: 'usuarios', label: 'Usuarios', icon: '👥' },
   { id: 'empresas', label: 'Empresas', icon: '🏢' },
+  { id: 'widget_horario_agente', label: 'Horario agente', icon: '🕐' },
   { id: 'widget_inactividad', label: 'Widget inactividad', icon: '⏱️' },
   { id: 'menus_widget', label: 'Menús Widget', icon: '☰' },
 ]
@@ -1537,7 +2026,10 @@ export default function AdminPortal({
 }) {
   const seccionesDisponibles = SECCIONES_ADMIN.filter(
     (item) =>
-      (item.id !== 'widget_inactividad' && item.id !== 'menus_widget') || rolUsuario === 'ADMIN'
+      (item.id !== 'widget_inactividad' &&
+        item.id !== 'menus_widget' &&
+        item.id !== 'widget_horario_agente') ||
+      rolUsuario === 'ADMIN',
   )
   // Si hay vistas parametrizadas, filtrar solo secciones permitidas; si no, mostrar todas
   const navItems =
@@ -1573,6 +2065,7 @@ export default function AdminPortal({
         {seccion === 'transferencias' && <TransferenciasSection />}
         {seccion === 'usuarios' && <UsuariosSection />}
         {seccion === 'empresas' && <EmpresasSection />}
+        {seccion === 'widget_horario_agente' && <WidgetHorarioAgenteSection />}
         {seccion === 'widget_inactividad' && <WidgetInactividadSection />}
         {seccion === 'menus_widget' && <MenusWidgetSection />}
       </div>
